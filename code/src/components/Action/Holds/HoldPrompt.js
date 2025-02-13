@@ -259,7 +259,7 @@ export const HoldPrompt = (props) => {
           }
      }
 
-     // console.log(pickupLocation);
+     //console.log("Default pickup location " + pickupLocation);
 
      const [location, setLocation] = React.useState(pickupLocation);
      const [sublocation, setSublocation] = React.useState(null);
@@ -459,7 +459,7 @@ export const HoldPrompt = (props) => {
                                                   {getTermFromDictionary(language, 'select_pickup_location')}
                                              </FormControlLabelText>
                                         </FormControlLabel>
-                                        <Select name="pickupLocations" selectedValue={location} minWidth={200} mt="$1" mb="$2" onValueChange={(itemValue) => setLocation(library.baseUrl, itemValue)}>
+                                        <Select name="pickupLocations" selectedValue={location} minWidth={200} mt="$1" mb="$2" onValueChange={(itemValue) => setLocation(itemValue)}>
                                              <SelectTrigger variant="outline" size="md">
                                                   {locations.map((selectedLocation, index) => {
                                                        if (selectedLocation.code === location) {
