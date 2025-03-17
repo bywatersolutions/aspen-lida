@@ -14,7 +14,11 @@ const HeaderLogoBar = (props) => {
           const localBrandingLogoUri = library.headerLogoApp;
           const backgroundColor = useColorModeValue('light', 'dark');
           //console.log(library.displayName);
-          const marginTop = Constants.statusBarHeight;
+          let marginTop = 24;
+          if (Platform.OS === 'android') {
+               marginTop = 0;
+          }
+
           //Assume an image that is 1536 x 200
           const ratio = width/1536;
           const imageHeight = 200 * ratio;
