@@ -63,18 +63,25 @@ export async function reloadProfile(url) {
      });
      const response = await discovery.post(`${endpoint.url}getPatronProfile`, postBody);
      if (response.ok) {
-          if (response.data.result) {
+          // any 2XX response will count, but may not be what we expect
+          if (response.data?.result) {
                //console.log(response.data.result.profile);
+               // if there is a result, this is good data
                if (response.data?.result?.profile) {
                     return response.data.result.profile;
                } else {
                     return response.data.result;
                }
+          // all other 'ok' responses that don't conform to expectations are a failure
+          } else {
+               return {
+                    success: false,
+               };
           }
+     // response was not 'ok', so throw an error
+     } else {
+          throw new Error(`error response from ${endpoint.url}getPatronProfile`);
      }
-     return {
-          success: false,
-     };
 }
 
 /**
