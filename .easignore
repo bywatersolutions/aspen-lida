@@ -38,3 +38,7 @@ code/credentials.json
 
 scripts/*.sh
 app-configs/google-services.json
+
+code/ios
+code/android
+code/dist
