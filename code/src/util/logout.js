@@ -7,7 +7,7 @@ import { LOGIN_DATA } from './globals';
 import { LIBRARY } from './loadLibrary';
 import { PATRON } from './loadPatron';
 import { BrowseCategoryContext, LibraryBranchContext, LibrarySystemContext, UserContext } from '../context/initialContext';
-
+import * as Sentry from '@sentry/react-native';
 /**
  * Logout the user and clean up data
  **/
@@ -73,4 +73,5 @@ export async function RemoveData() {
      LOGIN_DATA.loadedInitialData = false;
      LOGIN_DATA.themeSaved = false;
      console.log('Storage data cleansed.');
+	 Sentry.captureMessage("Remove Data called");
 }

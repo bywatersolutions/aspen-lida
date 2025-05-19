@@ -234,6 +234,7 @@ export function App() {
                signOut: async () => {
                     await RemoveData().then((res) => {
                          //queryClient.invalidateQueries({});
+						 Sentry.captureMessage("User signed out");
                          updateUser([]);
                          dispatch({ type: 'SIGN_OUT' });
                     });
