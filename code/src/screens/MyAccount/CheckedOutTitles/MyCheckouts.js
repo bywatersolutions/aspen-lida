@@ -12,7 +12,7 @@ import { DisplaySystemMessage } from '../../../components/Notifications';
 import { CheckoutsContext, LanguageContext, LibrarySystemContext, SystemMessagesContext, ThemeContext, UserContext } from '../../../context/initialContext';
 import { getTermFromDictionary, getTranslationsWithValues } from '../../../translations/TranslationService';
 import { confirmRenewAllCheckouts, confirmRenewCheckout, renewAllCheckouts } from '../../../util/accountActions';
-import {getPatronCheckedOutItems, setSortPreferences} from '../../../util/api/user';
+import { getPatronCheckedOutItems, setSortPreferences } from '../../../util/api/user';
 import { stripHTML } from '../../../util/apiAuth';
 import { MyCheckout } from './MyCheckout';
 
@@ -63,7 +63,7 @@ export const MyCheckouts = () => {
           });
      }, [navigation]);
 
-     useQuery(['checkouts', user.id, library.baseUrl, language], () => getPatronCheckedOutItems('all', library.baseUrl, true, language), {
+     useQuery(['checkouts', user.id, library.baseUrl, language], () => getPatronCheckedOutItems('all', library.baseUrl, false, language), {
           placeholderData: checkouts,
           onSuccess: (data) => {
                updateCheckouts(data);
@@ -99,6 +99,7 @@ export const MyCheckouts = () => {
                } else {
                     navigation.setOptions({ title: checkoutsBy.all });
                }
+
                //console.log("Clearing previous checkouts queries for " + originalCheckoutSource);
                //await queryClient.invalidateQueries({ queryKey: ['checkouts', user.id, library.baseUrl, originalCheckoutSource] });
                //console.log("Re-fetching checkout queries for " + value);
@@ -246,7 +247,7 @@ export const MyCheckouts = () => {
      const reloadCheckouts = async () => {
           setLoading(true);
           queryClient.invalidateQueries({ queryKey: ['user', library.baseUrl, language] });
-          queryClient.invalidateQueries({ queryKey: ['checkouts', user.id, library.baseUrl, language, 'all'] });
+          queryClient.invalidateQueries({ queryKey: ['checkouts', user.id, library.baseUrl, language] });
           setLoading(false);
      };
 
@@ -447,7 +448,7 @@ export const MyCheckouts = () => {
                                                   if (renewConfirmationResponse.renewType === 'all') {
                                                        await confirmRenewAllCheckouts(library.baseUrl, language).then(async (result) => {
                                                             queryClient.invalidateQueries({ queryKey: ['user', library.baseUrl, language] });
-                                                            queryClient.invalidateQueries({ queryKey: ['checkouts', user.id, library.baseUrl, language, 'all'] });
+                                                            queryClient.invalidateQueries({ queryKey: ['checkouts', user.id, library.baseUrl, language] });
 
                                                             setRenewConfirmationIsOpen(false);
                                                             setConfirmingRenewal(false);
@@ -455,7 +456,7 @@ export const MyCheckouts = () => {
                                                   } else {
                                                        await confirmRenewCheckout(renewConfirmationResponse.barcode, renewConfirmationResponse.recordId, renewConfirmationResponse.source, renewConfirmationResponse.itemId, library.baseUrl, renewConfirmationResponse.userId).then(async (result) => {
                                                             queryClient.invalidateQueries({ queryKey: ['user', library.baseUrl, language] });
-                                                            queryClient.invalidateQueries({ queryKey: ['checkouts', user.id, library.baseUrl, language, 'all'] });
+                                                            queryClient.invalidateQueries({ queryKey: ['checkouts', user.id, library.baseUrl, language] });
 
                                                             setRenewConfirmationIsOpen(false);
                                                             setConfirmingRenewal(false);
@@ -478,7 +479,9 @@ export const MyCheckouts = () => {
 
 function sortCheckouts(checkouts, sort) {
      let sortedCheckouts = [];
-     console.log("Sorting checkouts by " + sort);
+     if (__DEV__) {
+          console.log("Sorting checkouts by " + sort);
+     }
 
      let sortMethod = sort;
      let order = 'asc';
