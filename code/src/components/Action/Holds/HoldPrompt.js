@@ -501,7 +501,7 @@ export const HoldPrompt = (props) => {
 
                               ) : null}
                               <SelectNewHoldSublocation sublocations={PATRON.sublocations} location={location} activeSublocation={sublocation} setActiveSublocation={setSublocation} language={language} textColor={textColor} theme={theme} />
-                              {_.isArray(locations) && _.size(locations) > 1 && !isEContent && (library.allowRememberPickupLocation || __DEV__) ? (
+                              {_.isArray(locations) && _.size(locations) > 1 && !isEContent && (library.allowRememberPickupLocation) ? (
                                   <FormControl mb="$3">
                                        <Checkbox
                                            size="sm"
