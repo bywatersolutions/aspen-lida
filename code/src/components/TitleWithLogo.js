@@ -4,6 +4,7 @@ import { LibrarySystemContext, ThemeContext } from '../context/initialContext';
 import { View, Image, StyleSheet, Text, useColorMode, HStack, VStack, Box, Pressable, Icon, ChevronLeftIcon } from '@gluestack-ui/themed';
 import { Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { decodeHTML } from '../util/apiAuth';
 
 const HeaderLogoBar = (props) => {
      const { theme, colorMode } = React.useContext(ThemeContext);
@@ -64,7 +65,7 @@ export default function TitleWithLogo(props) {
                     ) : (
                        <Box width="$6" />
                     )}
-                    <Text flex={1} textAlign="center" color={theme['colors']['primary']['baseContrast']} fontSize="$lg" lineHeight="$lg" fontWeight="bold" numberOfLines={1} ellipsizeMode="tail">{props.title}</Text>
+                    <Text flex={1} textAlign="center" color={theme['colors']['primary']['baseContrast']} size="lg" lineHeight="$lg" fontWeight="bold" numberOfLines={1} ellipsizeMode="tail">{decodeHTML(props.title)}</Text>
                     <Box width="$6" />
                </HStack>
           </VStack>
