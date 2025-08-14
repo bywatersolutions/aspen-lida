@@ -6,6 +6,8 @@ import {AuthContext} from '../../components/navigation';
 import {LanguageContext, ThemeContext} from '../../context/initialContext';
 import {getTermFromDictionary} from '../../translations/TranslationService';
 
+import { logDebugMessage, logInfoMessage, logWarnMessage, logErrorMessage } from '../../util/logging.js';
+
 export const InvalidCredentials = () => {
      const { theme, colorMode, textColor } = React.useContext(ThemeContext);
      const { language } = React.useContext(LanguageContext);
@@ -13,6 +15,7 @@ export const InvalidCredentials = () => {
      const [isOpen, setIsOpen] = React.useState(true);
      const onClose = () => setIsOpen(false);
      const cancelRef = React.useRef(null);
+     logDebugMessage('Showing Invalid Credentials Alert');
 
      return (
           <Center>
