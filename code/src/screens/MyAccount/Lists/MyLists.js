@@ -269,8 +269,8 @@ export const MyLists = () => {
      }
 
      return (
-          <SafeAreaView style={{ flex: 1 }}>
-                    <Box px="$5" flexWrap="nowrap">
+          <Box style={{ flex: 1 }}>
+                    <Box pt="$2" px="$5" flexWrap="nowrap">
                          {showSystemMessage()}
                          <ScrollView horizontal>
                               <ButtonGroup space="sm">
@@ -330,6 +330,6 @@ export const MyLists = () => {
                     ) : (
                          <FlatList px="$5" mt="$2" data={lists} ListEmptyComponent={listEmptyComponent} renderItem={({ item }) => renderList(item, library.baseUrl)} keyExtractor={(item, index) => index.toString()} />
                     )}
-          </SafeAreaView>
+          </Box>
      );
 };
