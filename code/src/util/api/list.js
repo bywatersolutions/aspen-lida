@@ -37,14 +37,22 @@ export async function getListDetails(id, url) {
 /**
  * Returns all lists for a given user
  * @param {string} url
+ * @param {int} page
+ * @param {int} limit
+ * @param {int} includePagination
  **/
-export async function getLists(url) {
+export async function getLists(url, page= 1, limit = 20, includePagination = 1) {
      const postBody = await postData();
      const api = create({
           baseURL: url + '/API',
           timeout: GLOBALS.timeoutAverage,
           headers: getHeaders(true),
           auth: createAuthTokens(),
+          params: {
+               page,
+               limit,
+               includePagination
+          }
      });
      return await api.post('/ListAPI?method=getUserLists&checkIfValid=false', postBody);
 }
@@ -301,14 +309,22 @@ export async function deleteList(listId, url, optOutOfSoftDeletion = false) {
 /**
  * Returns all list groups for a given user
  * @param {string} url
+ * @param {int} page
+ * @param {int} limit
+ * @param {int} includePagination
  **/
-export async function getListGroups(url) {
+export async function getListGroups(url, page = 1, limit = 20, includePagination = 1) {
      const postBody = await postData();
      const api = create({
           baseURL: url + '/API',
           timeout: GLOBALS.timeoutAverage,
           headers: getHeaders(true),
           auth: createAuthTokens(),
+          params: {
+               page,
+               limit,
+               includePagination
+          }
      });
      return await api.post('/ListAPI?method=getUserListGroups', postBody);
 }
