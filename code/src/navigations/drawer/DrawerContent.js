@@ -243,7 +243,7 @@ export const DrawerContent = () => {
           placeholderData: [],
           onSuccess: (data) => {
                if(data.ok) {
-                    const lists = formatLists(data.data.result);
+                    const lists = formatLists(data.data.result.lists);
                     updateLists(lists)
                } else {
                     logDebugMessage("Error fetching user linked accounts");
@@ -267,7 +267,7 @@ export const DrawerContent = () => {
                if(data.ok) {
                     const groups = {
                          groups: data.data?.result?.groups ?? [],
-                         unassigned: data.data?.result?.unassigned ?? []
+                         unassigned: data.data?.result?.unassigned ?? 0
                     };
                     updateListGroups(groups);
                } else {
