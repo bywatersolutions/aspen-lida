@@ -7,7 +7,7 @@ import { ScrollView } from 'react-native';
 
 import { LanguageContext, LibraryBranchContext, LibrarySystemContext, SearchContext, ThemeContext, UserContext } from '../../../context/initialContext';
 import { navigateStack } from '../../../helpers/RootNavigator';
-import { SearchGlobal } from '../../../util/globals';
+import { SEARCH } from '../../../util/search';
 
 // custom components and helper files
 
@@ -19,7 +19,7 @@ export const SearchIndexScreen = () => {
 
      const search = async () => {
           navigateStack('BrowseTab', 'SearchResults', {
-               term: SearchGlobal.term,
+               term: SEARCH.term,
                type: 'catalog',
                prevRoute: 'DiscoveryScreen',
                scannerSearch: false,

@@ -9,8 +9,9 @@ import { HoldsContext, LanguageContext, LibrarySystemContext, UserContext } from
 import { getTermFromDictionary } from '../../translations/TranslationService';
 import { getVolumes } from '../../util/api/item';
 import { refreshProfile } from '../../util/api/user';
-import { completeAction } from '../../util/api/userHelper';
-import { logDebugMessage, logWarnMessage, getErrorMessage } from '../../util/logging';
+import { completeAction } from '../../util/recordActions';
+import { logDebugMessage, logWarnMessage } from '../../util/logging';
+import { getErrorMessage } from '../../util/apiAuth';
 
 const SelectVolumeHold = (props) => {
      const { id, title, action, volumeInfo, prevRoute, response, setResponse, responseIsOpen, setResponseIsOpen, onResponseClose, cancelResponseRef } = props;

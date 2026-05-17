@@ -7,9 +7,8 @@ import { ScrollView, View } from 'react-native';
 
 import { LoadingSpinner } from '../../components/loadingSpinner';
 import { getTermFromDictionary } from '../../translations/TranslationService';
-import { LIBRARY, SearchGlobal } from '../../util/globals';
-import { searchAvailableFacets } from '../../util/api/search';
-import { addAppliedFilter, buildParamsForUrl, removeAppliedFilter } from '../../util/api/searchHelper';
+import { LIBRARY } from '../../util/loadLibrary';
+import { addAppliedFilter, buildParamsForUrl, removeAppliedFilter, SEARCH, searchAvailableFacets } from '../../util/search';
 import { Facet_Checkbox } from './Facets/Checkbox';
 import { Facet_Date } from './Facets/Date';
 import { Facet_RadioGroup } from './Facets/RadioGroup';
@@ -37,7 +36,7 @@ export const Facet = ({ route, navigation }) => {
 
      const preselectValues = () => {
           let newValues = [];
-          const cluster = _.filter(SearchGlobal.pendingFilters, ['field', category]);
+          const cluster = _.filter(SEARCH.pendingFilters, ['field', category]);
           _.map(cluster, function (item, index, collection) {
                const facets = item['facets'];
                if (_.size(facets) > 0) {
@@ -58,7 +57,7 @@ export const Facet = ({ route, navigation }) => {
           _isMounted.current = true;
 
           const initData = async () => {
-               const data = _.filter(SearchGlobal.availableFacets, ['field', category]);
+               const data = _.filter(SEARCH.availableFacets, ['field', category]);
                if (data[0]) {
                     setFacets(data[0]['facets']);
                     setNumFacets(_.size(data[0]['facets']));
@@ -86,7 +85,7 @@ export const Facet = ({ route, navigation }) => {
                               onPress={() => {
                                    updateGlobal();
                                    navigation.navigate('Filters', {
-                                        pendingFilters: SearchGlobal.pendingFilters,
+                                        pendingFilters: SEARCH.pendingFilters,
                                    });
                               }}
                               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
@@ -150,14 +149,14 @@ export const Facet = ({ route, navigation }) => {
      const updateSearch = (resetFacetGroup = false, toFilters = false) => {
           const params = buildParamsForUrl();
           //console.log(params);
-          SearchGlobal.hasPendingChanges = false;
+          SEARCH.hasPendingChanges = false;
           if (toFilters) {
                navigation.navigate('Filters', {
-                    term: SearchGlobal.term,
+                    term: SEARCH.term,
                });
           } else {
                navigation.navigate('SearchResults', {
-                    term: SearchGlobal.term,
+                    term: SEARCH.term,
                     pendingParams: params,
                });
           }
@@ -174,14 +173,14 @@ export const Facet = ({ route, navigation }) => {
           }
           logDebugMessage("Updated values are " + newValues);
           setValues(newValues);
-          SearchGlobal.hasPendingChanges = true;
+          SEARCH.hasPendingChanges = true;
           updateGlobal(group, newValues);
      };
 
      const updateLocalValues = (group, newValues) => {
           setValues(newValues);
           logDebugMessage("Updating local values for " + group + " with values " + newValues);
-          SearchGlobal.hasPendingChanges = true;
+          SEARCH.hasPendingChanges = true;
           updateGlobal(group, newValues);
      };
 
@@ -198,7 +197,7 @@ export const Facet = ({ route, navigation }) => {
      };
 
      const discardChanges = () => {
-          SearchGlobal.hasPendingChanges = true;
+          SEARCH.hasPendingChanges = true;
           const difference = _.difference(values, valuesDefault);
           if (difference) {
                removeAppliedFilter(category, difference);
@@ -207,7 +206,7 @@ export const Facet = ({ route, navigation }) => {
      };
 
      const resetCluster = () => {
-          SearchGlobal.hasPendingChanges = true;
+          SEARCH.hasPendingChanges = true;
           removeAppliedFilter(category, values);
           setValues([]);
           updateSearch();

@@ -3,14 +3,13 @@ import _ from 'lodash';
 import { HStack, Icon, Pressable, Text, VStack } from '@gluestack-ui/themed';
 import React from 'react';
 
-import { SearchGlobal } from '../../../util/globals';
-import { addAppliedFilter, removeAppliedFilter } from '../../../util/api/searchHelper';
+import { addAppliedFilter, removeAppliedFilter, SEARCH } from '../../../util/search';
 import { ThemeContext } from '../../../context/initialContext';
 
 export const Facet_RadioGroup = ({ title, data, category, updater, applied }) => {
      const [isLoading, setIsLoading] = React.useState(true);
      const [value, setValue] = React.useState('');
-     const [pending] = React.useState(SearchGlobal.pendingFilters);
+     const [pending] = React.useState(SEARCH.pendingFilters);
      const {theme, textColor, colorMode } = React.useContext(ThemeContext);
 
      React.useEffect(() => {
@@ -52,7 +51,7 @@ export const Facet_RadioGroup = ({ title, data, category, updater, applied }) =>
                     setValue('relevance');
                } else {
                     setValue(payload);
-                    SearchGlobal.sortMethod = payload;
+                    SEARCH.sortMethod = payload;
                }
                addAppliedFilter(category, payload, false);
           }

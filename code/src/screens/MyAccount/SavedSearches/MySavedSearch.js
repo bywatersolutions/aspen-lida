@@ -13,7 +13,8 @@ import { LanguageContext, LibrarySystemContext, SystemMessagesContext, UserConte
 import { getCleanTitle } from '../../../helpers/item';
 import { navigateStack } from '../../../helpers/RootNavigator';
 import { getTermFromDictionary } from '../../../translations/TranslationService';
-import { getSavedSearch } from '../../../util/api/list';
+import { getSavedSearch } from '../../../util/api/user';
+import { formatDiscoveryVersion } from '../../../util/loadLibrary';
 import AddToList from '../../Search/AddToList';
 
 const blurhash = 'MHPZ}tt7*0WC5S-;ayWBofj[K5RjM{ofM_';

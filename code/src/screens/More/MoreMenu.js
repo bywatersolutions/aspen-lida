@@ -35,7 +35,8 @@ import {
 import { navigate } from '../../helpers/RootNavigator';
 import { getTermFromDictionary } from '../../translations/TranslationService';
 import { deleteAspenUser } from '../../util/api/user';
-import { GLOBALS, LIBRARY } from '../../util/globals';
+import { GLOBALS } from '../../util/globals';
+import { LIBRARY } from '../../util/loadLibrary';
 import { logDebugMessage, logErrorMessage, logInfoMessage } from '../../util/logging';
 
 export const MoreMenu = () => {

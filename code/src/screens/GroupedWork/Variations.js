@@ -14,12 +14,14 @@ import { loadingSpinner } from '../../components/loadingSpinner';
 import { HoldsContext, LanguageContext, LibrarySystemContext, ThemeContext, UserContext } from '../../context/initialContext';
 import { navigate, navigateStack } from '../../helpers/RootNavigator';
 import { getTermFromDictionary } from '../../translations/TranslationService';
-import { placeHold, confirmHold, refreshProfile } from '../../util/api/user';
+import { confirmHold } from '../../util/api/circulation';
 import { getFirstRecord, getRecords, getVariations } from '../../util/api/item';
-import { stripHTML } from '../../helpers/helpers';
+import { refreshProfile } from '../../util/api/user';
+import { getErrorMessage, stripHTML } from '../../util/apiAuth';
+import { placeHold } from '../../util/recordActions';
 import { getStatusIndicator } from './StatusIndicator';
 
-import { logDebugMessage, logWarnMessage, getErrorMessage } from '../../util/logging.js';
+import { logDebugMessage, logInfoMessage, logWarnMessage, logErrorMessage } from '../../util/logging.js';
 
 export const Variations = (props) => {
      const queryClient = useQueryClient();

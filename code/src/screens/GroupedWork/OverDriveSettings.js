@@ -2,7 +2,7 @@ import { Button, Checkbox, FormControl, Input, Modal, Stack } from 'native-base'
 import React from 'react';
 
 // custom components and helper files
-import { updateOverDriveEmail } from '../../util/api/user';
+import { updateOverDriveEmail } from '../../util/accountActions';
 import { getTermFromDictionary } from '../../translations/TranslationService';
 
 export const GetOverDriveSettings = (props) => {

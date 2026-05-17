@@ -1,22 +1,37 @@
 import { GLOBALS } from '../globals';
-import { createApiClient } from './apiFactory';
+import { createAuthTokens, getHeaders } from '../apiAuth';
+import { create } from 'apisauce';
+import _ from 'lodash';
+import { logDebugMessage, logInfoMessage, logWarnMessage, logErrorMessage } from '../logging.js';
 
+/** *******************************************************************
+ * General
+ ******************************************************************* **/
 /**
  * Returns manifestation data for the given grouped work id and format
  * @param {string} itemId
  * @param {string} format
  * @param {string} language
- * @param {?string} url
- * @returns {Promise<{id: string, format: string, manifestation: array}>}
+ * @param {string} url
  **/
-export async function getManifestation(itemId, format, language, url = null) {
-     const client = createApiClient({ url, timeout: GLOBALS.timeoutSlow, language });
+export async function getManifestation(itemId, format, language, url) {
+     const api = create({
+          baseURL: url + '/API',
+          timeout: GLOBALS.timeoutSlow,
+          headers: getHeaders(),
+          auth: createAuthTokens(),
+     });
 
-     const response = await client.get('/ItemAPI?method=getManifestation', {
+     const response = await api.get('/ItemAPI?method=getManifestation', {
           id: itemId,
-          format,
+          format: format,
           language,
      });
+
+     if(!response.ok) {
+          logErrorMessage(`Error fetching manifestation for itemId ${itemId} format ${format} language ${language}: ${response.problem}`);
+          logDebugMessage(response);
+     }
 
      return {
           id: response.data?.id ?? itemId,
@@ -30,34 +45,44 @@ export async function getManifestation(itemId, format, language, url = null) {
  * @param {string} itemId
  * @param {string} format
  * @param {string} language
- * @param {?string} url
- * @param {object} variation
- * @returns {Promise<{id: string, format: string, variations: array, volumeInfo: object}>}
+ * @param {string} url
+ * @param {array} variation
  **/
-export async function getVariations(itemId, format, language, url = null, variation) {
-     const recordId = variation?.recordId ?? null;
+export async function getVariations(itemId, format, language, url, variation) {
+     let recordId = null;
+     if (variation.recordId) {
+          recordId = variation.recordId;
+     }
 
-     const client = createApiClient({ url, timeout: GLOBALS.timeoutSlow, language });
+     const api = create({
+          baseURL: url + '/API',
+          timeout: GLOBALS.timeoutSlow,
+          headers: getHeaders(),
+          auth: createAuthTokens(),
+     });
 
-     const response = await client.get('/ItemAPI?method=getVariations', {
+     const response = await api.get('/ItemAPI?method=getVariations', {
           id: itemId,
-          format,
+          format: format,
           language,
           recordId,
      });
 
-     const result = response.data ?? {};
+     if(!response.ok) {
+          logErrorMessage(`Error fetching variations for itemId ${itemId} format ${format} language ${language}: ${response.problem}`);
+          logDebugMessage(response);
+     }
 
      return {
-          id: result.id ?? itemId,
-          format: result.format ?? format,
-          variations: result.variations ?? [],
+          id: response.data?.id ?? itemId,
+          format: response.data?.format ?? format,
+          variations: response.data?.variations ?? [],
           volumeInfo: {
-               numItemsWithVolumes: result.numItemsWithVolumes ?? 0,
-               numItemsWithoutVolumes: result.numItemsWithoutVolumes ?? 0,
-               hasItemsWithoutVolumes: result.hasItemsWithoutVolumes ?? 0,
-               majorityOfItemsHaveVolumes: result.majorityOfItemsHaveVolumes ?? false,
-               alwaysPlaceVolumeHoldWhenVolumesArePresent: result.alwaysPlaceVolumeHoldWhenVolumesArePresent ?? false,
+               numItemsWithVolumes: response.data?.numItemsWithVolumes ?? 0,
+               numItemsWithoutVolumes: response.data?.numItemsWithoutVolumes ?? 0,
+               hasItemsWithoutVolumes: response.data?.hasItemsWithoutVolumes ?? 0,
+               majorityOfItemsHaveVolumes: response.data?.majorityOfItemsHaveVolumes ?? false,
+               alwaysPlaceVolumeHoldWhenVolumesArePresent: response.data?.alwaysPlaceVolumeHoldWhenVolumesArePresent ?? false,
           },
      };
 }
@@ -68,18 +93,27 @@ export async function getVariations(itemId, format, language, url = null, variat
  * @param {string} format
  * @param {string} source
  * @param {string} language
- * @param {?string} url
- * @returns {Promise<{id: string, format: string, records: array}>}
+ * @param {string} url
  **/
-export async function getRecords(itemId, format, source, language, url = null) {
-     const client = createApiClient({ url, timeout: GLOBALS.timeoutSlow, language });
+export async function getRecords(itemId, format, source, language, url) {
+     const api = create({
+          baseURL: url + '/API',
+          timeout: GLOBALS.timeoutSlow,
+          headers: getHeaders(),
+          auth: createAuthTokens(),
+     });
 
-     const response = await client.get('/ItemAPI?method=getRecords', {
+     const response = await api.get('/ItemAPI?method=getRecords', {
           id: itemId,
-          format,
-          source,
+          format: format,
+          source: source,
           language,
      });
+
+     if(!response.ok) {
+          logErrorMessage(`Error fetching records for itemId ${itemId} format ${format} source ${source} language ${language}: ${response.problem}`);
+          logDebugMessage(response);
+     }
 
      return {
           id: response.data?.id ?? itemId,
@@ -88,20 +122,17 @@ export async function getRecords(itemId, format, source, language, url = null) {
      };
 }
 
-/**
- * Returns the first record for the given grouped work id and format
- * @param {string} itemId
- * @param {string} format
- * @param {string} language
- * @param {?string} url
- * @returns {Promise<{id: string|null, source: string, record: string|null}>}
- **/
-export async function getFirstRecord(itemId, format, language, url = null) {
-     const client = createApiClient({ url, timeout: GLOBALS.timeoutSlow, language });
+export async function getFirstRecord(itemId, format, language, url) {
+     const api = create({
+          baseURL: url + '/API',
+          timeout: GLOBALS.timeoutSlow,
+          headers: getHeaders(),
+          auth: createAuthTokens(),
+     });
 
-     const response = await client.get('/ItemAPI?method=getRecords', {
+     const response = await api.get('/ItemAPI?method=getRecords', {
           id: itemId,
-          format,
+          format: format,
           language,
      });
 
@@ -109,55 +140,78 @@ export async function getFirstRecord(itemId, format, language, url = null) {
      let source = 'ils';
      let record = null;
 
-     if (response.ok && response.data?.records) {
-          const records = response.data.records;
-          const firstKey = Object.keys(records)[0];
+     if(response.ok) {
+          if (response.data?.records) {
+               const records = response.data.records;
+               const keys = Object.keys(records);
+               let firstKey = keys[0];
+               id = records[firstKey].id;
+               record = id;
+               const recordId = id.split(':');
+               id = recordId[1]?.toString();
+               source = recordId[0]?.toString();
+          } else {
+               logWarnMessage(`No records found for itemId ${itemId} format ${format} language ${language}`);
 
-          if (firstKey) {
-               record = records[firstKey].id;
-               const [recordSource, recordId] = record.split(':');
-               id = recordId ?? null;
-               source = recordSource ?? 'ils';
           }
+     } else {
+          logErrorMessage(`Error fetching records for itemId ${itemId} format ${format} language ${language}: ${response.problem}`);
+          logDebugMessage(response);
      }
 
-     return { id, source, record };
+     return {
+          id: id,
+          source: source,
+          record: record,
+     };
 }
 
-/**
- * Returns volumes data for a given item id
- * @param {string} id
- * @param {?string} url
- * @returns {Promise<array>}
- **/
-export async function getVolumes(id, url = null) {
-     const client = createApiClient({ url, timeout: GLOBALS.timeoutAverage });
-
-     const response = await client.get('/ItemAPI?method=getVolumes', { id });
-
-     if (response.ok && response.data?.volumes) {
-          return [...response.data.volumes].sort((a, b) => (a.key ?? '').toString().localeCompare((b.key ?? '').toString()));
-     }
-
-     return [];
-}
-
-/**
- * Returns related record data for the given item and record id
- * @param {string} id
- * @param {string} recordId
- * @param {string} format
- * @param {?string} url
- * @returns {Promise<{id: string, recordId: string, format: string, manifestation: object}>}
- **/
-export async function getRelatedRecord(id, recordId, format, url = null) {
-     const client = createApiClient({ url, timeout: GLOBALS.timeoutSlow });
-
-     const response = await client.get('/ItemAPI?method=getRelatedRecord', {
-          id,
-          record: recordId,
-          format,
+export async function getVolumes(id, url) {
+     const api = create({
+          baseURL: url + '/API',
+          timeout: GLOBALS.timeoutAverage,
+          headers: getHeaders(),
+          auth: createAuthTokens(),
+          params: {
+               id: id,
+          },
      });
+     const response = await api.get('/ItemAPI?method=getVolumes', {
+          id,
+     });
+     let volumes = [];
+     if (response.ok) {
+          if (response.data?.volumes) {
+               volumes = _.sortBy(response.data.volumes, 'key');
+          } else {
+               logWarnMessage(`No volumes found for id ${id}`);
+          }
+     } else {
+          logErrorMessage(`Error fetching volumes for id ${id}: ${response.problem}`);
+          logDebugMessage(response);
+     }
+
+     return volumes;
+}
+
+export async function getRelatedRecord(id, recordId, format, url) {
+     const api = create({
+          baseURL: url + '/API',
+          timeout: GLOBALS.timeoutSlow,
+          headers: getHeaders(),
+          auth: createAuthTokens(),
+     });
+
+     const response = await api.get('/ItemAPI?method=getRelatedRecord', {
+          id: id,
+          record: recordId,
+          format: format,
+     });
+
+     if(!response.ok) {
+          logErrorMessage(`Error fetching related record for id ${id} recordId ${recordId} format ${format}: ${response.problem}`);
+          logDebugMessage(response);
+     }
 
      return {
           id: response.data?.id ?? id,
@@ -172,39 +226,29 @@ export async function getRelatedRecord(id, recordId, format, url = null) {
  * @param {string} recordId
  * @param {string} language
  * @param {string} variationId
- * @param {?string} url
- * @returns {Promise<{recordId: string, copies: array}>}
+ * @param {string} url
  **/
-export async function getCopies(recordId, language = 'en', variationId, url = null) {
-     const client = createApiClient({ url, timeout: GLOBALS.timeoutSlow, language });
+export async function getCopies(recordId, language = 'en', variationId, url) {
+     const api = create({
+          baseURL: url + '/API',
+          timeout: GLOBALS.timeoutSlow,
+          headers: getHeaders(),
+          auth: createAuthTokens(),
+     });
 
-     const response = await client.get('/ItemAPI?method=getCopies', {
+     const response = await api.get('/ItemAPI?method=getCopies', {
           recordId,
           language,
           variationId,
      });
 
+     if(!response.ok) {
+          logErrorMessage(`Error fetching copies for recordId ${recordId} language ${language} variationId ${variationId}: ${response.problem}`);
+          logDebugMessage(response);
+     }
+
      return {
-          recordId,
+          recordId: recordId,
           copies: response.data?.copies ?? [],
      };
-}
-
-/**
- * Returns item details for a given record id and format
- * @param {?string} url
- * @param {string} id
- * @param {string} format
- * @returns {Promise<{id: string, format: string, details: object}>}
- **/
-export async function getItemDetails(url = null, id, format) {
-     const client = createApiClient({ url, timeout: GLOBALS.timeoutAverage });
-
-     return await client.post(
-          '/ItemAPI?method=getItemDetails',
-          {},
-          {
-               params: { recordId: id, format },
-          }
-     );
 }

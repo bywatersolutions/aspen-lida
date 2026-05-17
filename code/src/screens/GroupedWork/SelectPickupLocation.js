@@ -6,9 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HoldsContext, LibrarySystemContext, UserContext } from '../../context/initialContext';
 import { getTermFromDictionary } from '../../translations/TranslationService';
 import { refreshProfile } from '../../util/api/user';
-import { completeAction } from '../../util/api/userHelper';
+import { completeAction } from '../../util/recordActions';
 import { SelectVolume } from './SelectVolume';
-import { logDebugMessage, logWarnMessage, getErrorMessage } from '../../util/logging';
+import { logDebugMessage, logWarnMessage } from '../../util/logging';
+import { getErrorMessage } from '../../util/apiAuth';
 
 const SelectPickupLocation = (props) => {
      const { id, action, title, volumeInfo, prevRoute, response, setResponse, responseIsOpen, setResponseIsOpen, onResponseClose, cancelResponseRef, language } = props;

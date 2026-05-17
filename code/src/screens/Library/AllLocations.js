@@ -14,9 +14,10 @@ import { DisplaySystemMessage } from '../../components/Notifications';
 import { LanguageContext, LibraryBranchContext, LibrarySystemContext, SystemMessagesContext, UserContext } from '../../context/initialContext';
 import { navigate } from '../../helpers/RootNavigator';
 import { getTermFromDictionary } from '../../translations/TranslationService';
-import { getLocations } from '../../util/api/system';
-import { PATRON } from '../../util/globals';
-import { logDebugMessage, logErrorMessage, getErrorMessage } from '../../util/logging';
+import { getLocations } from '../../util/api/location';
+import { PATRON } from '../../util/loadPatron';
+import { logDebugMessage, logErrorMessage } from '../../util/logging';
+import { getErrorMessage } from '../../util/apiAuth';
 
 const blurhash = 'MHPZ}tt7*0WC5S-;ayWBofj[K5RjM{ofM_';
 

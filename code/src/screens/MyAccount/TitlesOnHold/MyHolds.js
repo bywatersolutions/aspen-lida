@@ -6,6 +6,7 @@ import {
      Button,
      ButtonText,
      Center,
+     Checkbox,
      CheckboxGroup, ChevronDownIcon,
      FormControl,
      Heading,
@@ -18,19 +19,19 @@ import {
 } from '@gluestack-ui/themed';
 import React from 'react';
 import { Platform, SectionList } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // custom components and helper files
 import { loadingSpinner } from '../../../components/loadingSpinner';
 import { DisplaySystemMessage } from '../../../components/Notifications';
 import { HoldsContext, LanguageContext, LibrarySystemContext, SystemMessagesContext, ThemeContext, UserContext } from '../../../context/initialContext';
 import { getTermFromDictionary, getTranslationsWithValues } from '../../../translations/TranslationService';
-import { getPatronHolds, setSortPreferences } from '../../../util/api/user';
-import { sortHolds, formatHolds, formatPickupLocations } from '../../../util/api/userHelper';
-import { getPickupLocations } from '../../../util/api/user';
+import { getPatronCheckedOutItems, getPatronHolds, sortHolds, setSortPreferences, formatHolds } from '../../../util/api/user';
+import { formatPickupLocations, getPickupLocations } from '../../../util/loadLibrary';
 import { ManageAllHolds, ManageSelectedHolds, MyHold } from './MyHold';
 
-import { logDebugMessage, logErrorMessage, getErrorMessage } from '../../../util/logging.js';
+import { logDebugMessage, logInfoMessage, logWarnMessage, logErrorMessage } from '../../../util/logging.js';
+import { getErrorMessage } from '../../../util/apiAuth';
 
 export const MyHolds = () => {
      const isFetchingHolds = useIsFetching({ queryKey: ['holds'] });

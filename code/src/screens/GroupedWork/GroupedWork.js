@@ -15,16 +15,14 @@ import { GroupedWorkContext, LanguageContext, LibrarySystemContext, SystemMessag
 import { startSearch } from '../../helpers/RootNavigator';
 import { getTermFromDictionary } from '../../translations/TranslationService';
 import { getFirstRecord, getVariations } from '../../util/api/item';
-import { getLinkedAccounts, passUserToDiscovery } from '../../util/api/user';
-import { formatLinkedAccounts } from '../../util/api/userHelper';
+import { formatLinkedAccounts, getLinkedAccounts } from '../../util/api/user';
 import { getGroupedWork } from '../../util/api/work';
-import { decodeHTML } from '../../helpers/helpers';
-import { getPickupLocations, getPickupSublocations } from '../../util/api/user';
-import { formatPickupLocations } from '../../util/api/userHelper';
+import { decodeHTML, getErrorMessage, passUserToDiscovery } from '../../util/apiAuth';
+import { formatPickupLocations, getPickupLocations, getPickupSublocations } from '../../util/loadLibrary';
 import AddToList from '../Search/AddToList';
 import Variations from './Variations';
 
-import { logDebugMessage, getErrorMessage } from '../../util/logging.js';
+import { logDebugMessage, logInfoMessage, logWarnMessage, logErrorMessage } from '../../util/logging.js';
 
 const blurhash = 'MHPZ}tt7*0WC5S-;ayWBofj[K5RjM{ofM_';
 

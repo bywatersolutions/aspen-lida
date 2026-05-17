@@ -13,13 +13,12 @@ import {
      UserContext,
 } from '../../../context/initialContext';
 import { getTermFromDictionary } from '../../../translations/TranslationService';
-import { getLinkedAccounts, getViewerAccounts, removeLinkedAccount, removeViewerAccount } from '../../../util/api/user';
-import { formatLinkedAccounts } from '../../../util/api/userHelper';
-
+import { formatLinkedAccounts, getLinkedAccounts, getViewerAccounts, removeLinkedAccount, removeViewerAccount } from '../../../util/api/user';
 import AddLinkedAccount from './AddLinkedAccount';
 import DisableAccountLinking from './DisableAccountLinking';
 import EnableAccountLinking from './EnableAccountLinking';
-import { logDebugMessage, logErrorMessage, getErrorMessage } from '../../../util/logging';
+import { logDebugMessage, logErrorMessage } from '../../../util/logging';
+import { getErrorMessage } from '../../../util/apiAuth';
 
 export const MyLinkedAccounts = () => {
      const navigation = useNavigation();

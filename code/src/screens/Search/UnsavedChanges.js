@@ -6,7 +6,7 @@ import { AlertDialog, AlertDialogBackdrop,
      AlertDialogFooter, Button, ButtonText, ButtonGroup, Text, Heading, Center, CloseIcon, Pressable } from '@gluestack-ui/themed';
 import React from 'react';
 
-import { SearchGlobal } from '../../util/globals';
+import { SEARCH } from '../../util/search';
 import { getTermFromDictionary } from '../../translations/TranslationService';
 import { ThemeContext } from '../../context/initialContext';
 
@@ -19,7 +19,7 @@ export const UnsavedChangesExit = (props) => {
      const cancelRef = React.useRef(null);
 
      function getStatus() {
-          const hasPendingChanges = SearchGlobal.hasPendingChanges;
+          const hasPendingChanges = SEARCH.hasPendingChanges;
           if (hasPendingChanges) {
                // if pending changes found, pop alert to confirm close
                setIsOpen(true);
@@ -32,19 +32,19 @@ export const UnsavedChangesExit = (props) => {
      // update parameters, then go to search results screen
      const updateClose = () => {
           updateSearch(false);
-          SearchGlobal.hasPendingChanges = false;
+          SEARCH.hasPendingChanges = false;
      };
 
      // remove pending parameters, then go back to original search results screen
      const forceClose = () => {
           discardChanges();
           setIsOpen(false);
-          SearchGlobal.hasPendingChanges = false;
+          SEARCH.hasPendingChanges = false;
           if (prevRoute === 'SearchScreen') {
                navigation.navigate('BrowseTab', {
                     screen: 'SearchResults',
                     params: {
-                         term: SearchGlobal.term,
+                         term: SEARCH.term,
                     },
                });
           } else {

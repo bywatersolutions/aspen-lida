@@ -12,6 +12,7 @@ import { OpenSideLoad } from './OpenSideLoad';
 import {
      Button,
      ButtonText,
+     Center,
      CloseIcon,
      Heading,
      Icon,
@@ -21,12 +22,15 @@ import {
      ModalBody,
      ModalHeader,
      ModalCloseButton,
+     Pressable,
      Text,
 } from '@gluestack-ui/themed';
-import React from 'react';
+import React, { useRef } from 'react';
 import { LibrarySystemContext, ThemeContext, UserContext } from '../../context/initialContext';
-import { passUserToDiscovery } from '../../util/api/user';
+import { passUserToDiscovery } from '../../util/apiAuth';
 import * as WebBrowser from 'expo-web-browser';
+
+import { logDebugMessage, logInfoMessage, logWarnMessage, logErrorMessage } from '../../util/logging.js';
 
 export const ActionButton = (data) => {
      const {theme, textColor, backgroundColor, colorMode} = React.useContext(ThemeContext);

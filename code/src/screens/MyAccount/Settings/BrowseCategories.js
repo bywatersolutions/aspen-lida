@@ -6,10 +6,9 @@ import { loadingSpinner } from '../../../components/loadingSpinner';
 import { DisplayErrorAlertDialog } from '../../../components/loadError';
 import { BrowseCategoryContext, LanguageContext, LibrarySystemContext, ThemeContext } from '../../../context/initialContext';
 
-import { updateBrowseCategoryStatus } from '../../../util/api/user';
-import { getBrowseCategoryListForUser } from '../../../util/api/search';
-
-import { logDebugMessage, logErrorMessage, getErrorMessage } from '../../../util/logging';
+import { getBrowseCategoryListForUser, updateBrowseCategoryStatus } from '../../../util/loadPatron';
+import { getErrorMessage } from '../../../util/apiAuth';
+import { logDebugMessage, logErrorMessage } from '../../../util/logging';
 import _ from 'lodash';
 
 export const Settings_BrowseCategories = () => {

@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
-import {useNavigation} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import { Image } from 'expo-image';
 import _ from 'lodash';
 import { Actionsheet, ActionsheetItem, ActionsheetBackdrop, ActionsheetContent, ActionsheetItemText, ActionsheetDragIndicatorWrapper, ActionsheetDragIndicator, Box, Button, ButtonText, Center, Checkbox, CheckboxIndicator, CheckboxIcon, CheckIcon, HStack, Icon, Pressable, ActionsheetIcon, VStack } from '@gluestack-ui/themed';
@@ -11,15 +11,14 @@ import { HoldsContext, LanguageContext, LibrarySystemContext, UserContext, Theme
 import { getAuthor, getBadge, getCleanTitle, getExpirationDate, getFormat, getOnHoldFor, getPickupLocation, getPosition, getOutOfHoldGroupMessage, getStatus, getTitle, getCallNumber, getVolume, getType, getCollectionName } from '../../../helpers/item';
 import { navigateStack } from '../../../helpers/RootNavigator';
 import { getTermFromDictionary } from '../../../translations/TranslationService';
-import { cancelHold, cancelHolds, cancelVdxRequest, freezeHold, freezeHolds, thawHold, thawHolds } from '../../../util/api/user';
-import { formatPickupLocations } from '../../../util/api/userHelper';
-import { formatDiscoveryVersion } from '../../../helpers/helpers';
-import { checkoutItem, getPickupLocations } from '../../../util/api/user';
+import { cancelHold, cancelHolds, cancelVdxRequest, freezeHold, freezeHolds, thawHold, thawHolds } from '../../../util/accountActions';
+import { formatDiscoveryVersion, formatPickupLocations, getPickupLocations } from '../../../util/loadLibrary';
+import { checkoutItem } from '../../../util/recordActions';
 import { SelectPickupLocation } from './SelectPickupLocation';
 import { SelectThawDate } from './SelectThawDate.js';
-import { PATRON } from '../../../util/globals';
+import { PATRON } from '../../../util/loadPatron';
 
-import { logDebugMessage } from '../../../util/logging.js';
+import { logDebugMessage, logInfoMessage, logWarnMessage, logErrorMessage } from '../../../util/logging.js';
 import { useQueryClient } from '@tanstack/react-query';
 
 const blurhash = 'MHPZ}tt7*0WC5S-;ayWBofj[K5RjM{ofM_';

@@ -20,10 +20,11 @@ import { LoginScreen } from '../screens/Auth/Login';
 import { SelfRegistration } from '../screens/Auth/SelfRegistration';
 import { SplashScreen } from '../screens/Auth/Splash';
 import { getTermFromDictionary } from '../translations/TranslationService';
-import { GLOBALS, LIBRARY } from '../util/globals';
+import { GLOBALS } from '../util/globals';
 //import { updateAspenLiDABuild } from '../util/greenhouse';
-import { checkCachedUrl } from '../util/api/system';
-import { RemoveData } from '../helpers/helpers';
+import { LIBRARY } from '../util/loadLibrary';
+import { checkCachedUrl } from '../util/login';
+import { RemoveData } from '../util/logout';
 import LibraryCardScanner from './LibraryCardScanner';
 import TitleWithLogo from '../components/TitleWithLogo'
 
