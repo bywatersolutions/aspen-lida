@@ -1,7 +1,7 @@
 import * as Device from 'expo-device';
 import * as Linking from 'expo-linking';
 import _ from 'lodash';
-import { Alert, Box, Center, HStack, Pressable, Text, VStack, ScrollView } from 'native-base';
+import { Alert, Box, Center, HStack, Pressable, Text, VStack, ScrollView, Button } from 'native-base';
 import React from 'react';
 import { Platform } from 'react-native';
 import { checkVersion } from 'react-native-check-version';
@@ -16,7 +16,7 @@ export const SupportScreen = () => {
      const { library } = React.useContext(LibrarySystemContext);
      const { location } = React.useContext(LibraryBranchContext);
      const { language } = React.useContext(LanguageContext);
-     const { textColor } = React.useContext(ThemeContext);
+     const { theme, textColor } = React.useContext(ThemeContext);
      const [status, setStatus] = React.useState({
           needsUpdate: false,
           url: null,
@@ -131,12 +131,10 @@ export const SupportScreen = () => {
                          </VStack>
                     ) : null}
                </VStack>
-               <Center>
-                    <Pressable mt={3} onPress={() => navigation.navigate('MyDevice_APIErrorLog')}>
-                         <Text bold textAlign="center">
-                              {getTermFromDictionary(language, 'api_error_log')}
-                         </Text>
-                    </Pressable>
+               <Center pt={5}>
+                    <Button bgColor={theme['colors']['secondary']['500']} variant="outline" onPress={() => navigation.navigate('MyDevice_APIErrorLog')}>
+                         <Text color={theme['colors']['secondary']['500-text']}>{getTermFromDictionary(language, 'open_api_error_log')}</Text>
+                    </Button>
                </Center>
                {status.needsUpdate ? (
                     <Center mt={5}>

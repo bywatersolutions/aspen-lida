@@ -1,7 +1,8 @@
 import React from 'react';
 import { Accordion, AccordionItem, AccordionHeader, AccordionTrigger, AccordionTitleText, AccordionIcon, AccordionContent, AccordionContentText, Box, Button, ButtonText, FlatList, Heading, HStack, Spinner, Text, VStack, ChevronUpIcon, ChevronDownIcon } from '@gluestack-ui/themed';
 import { clearApiErrorLogs, getApiErrorLogsPage } from '../../../../util/db';
-import { ThemeContext } from '../../../../context/initialContext';
+import { LanguageContext, ThemeContext } from '../../../../context/initialContext';
+import { getTermFromDictionary } from '../../../../translations/TranslationService';
 
 /* move this to the helpers.js */
 function formatDate(ms) {
@@ -14,6 +15,7 @@ function formatDate(ms) {
 
 export const APIErrorLog = () => {
      const [loading, setLoading] = React.useState(false);
+     const { language } = React.useContext(LanguageContext);
      const { theme, colorMode, textColor } = React.useContext(ThemeContext);
      const [page, setPage] = React.useState(1);
      const [rows, setRows] = React.useState([]);
@@ -127,10 +129,10 @@ export const APIErrorLog = () => {
           <Box flex={1}>
                <Box px="$3" py="$3" borderBottomWidth={1} borderColor="$borderLight200">
                     <Heading size="sm" color={textColor}>
-                         API Error Logs (Last 24 Hours)
+                         {getTermFromDictionary(language, 'api_error_log')}
                     </Heading>
                     <Text size="xs" color={textColor}>
-                         {'Total: ' + meta.total}
+                         {getTermFromDictionary(language, 'total') + ': ' + meta.total}
                     </Text>
                </Box>
 
@@ -145,7 +147,7 @@ export const APIErrorLog = () => {
                          renderItem={renderEntry}
                          ListEmptyComponent={
                               <Box px="$3" py="$6" alignItems="center">
-                                   <Text>No API errors in the past 24 hours.</Text>
+                                   <Text>{getTermFromDictionary(language, 'api_error_log_empty')}</Text>
                               </Box>
                          }
                     />
@@ -153,19 +155,19 @@ export const APIErrorLog = () => {
 
                <HStack px="$3" py="$3" justifyContent="space-between" alignItems="center" borderTopWidth={1} borderColor="$borderLight200">
                     <Button bgColor={theme['colors']['secondary']['500']} onPress={() => loadPage(page - 1)} isDisabled={loading || !meta.hasPrevious}>
-                         <ButtonText color={theme['colors']['secondary']['500-text']}>Previous</ButtonText>
+                         <ButtonText color={theme['colors']['secondary']['500-text']}>{getTermFromDictionary(language, 'previous')}</ButtonText>
                     </Button>
 
                     <Text size="xs" color={textColor}>{`Page ${page} / ${meta.totalPages}`}</Text>
 
                     <Button bgColor={theme['colors']['secondary']['500']} onPress={() => loadPage(page + 1)} isDisabled={loading || !meta.hasMore}>
-                         <ButtonText color={theme['colors']['secondary']['500-text']}>Next</ButtonText>
+                         <ButtonText color={theme['colors']['secondary']['500-text']}>{getTermFromDictionary(language, 'next')}</ButtonText>
                     </Button>
                </HStack>
 
                <Box px="$3" pb="$3">
                     <Button variant="outline" borderColor={theme['colors']['tertiary']['500']} onPress={onClear} isDisabled={loading}>
-                         <ButtonText color={theme['colors']['tertiary']['500']}>Clear Logs</ButtonText>
+                         <ButtonText color={theme['colors']['tertiary']['500']}>{getTermFromDictionary(language, 'clear_api_error_log')}</ButtonText>
                     </Button>
                </Box>
           </Box>
