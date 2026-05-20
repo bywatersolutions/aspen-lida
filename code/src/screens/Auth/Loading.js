@@ -275,7 +275,8 @@ export const LoadingScreen = () => {
                     logDebugMessage(data);
                     const error = getErrorMessage(data.code ?? 0, data.problem);
                     setHasError(true);
-                    setErrorMessage("Unable to load patron profile. " + error.message);
+                    setErrorTitle("Unable to load patron profile");
+                    setErrorMessage(error.message);
                }
           },
           onError: (error) => {
