@@ -142,7 +142,7 @@ export const Settings_PickupLocations = () => {
 					onValueChange={(itemValue) => setLocation(itemValue)}>
 					<SelectTrigger variant="outline" size="md">
 						{selectedLocationObj ? (
-							<SelectInput value={selectedLocationObj.name} color={textColor} />
+							<SelectInput value={selectedLocationObj.displayName} color={textColor} />
 						) : (
 							<SelectInput value={getTermFromDictionary(language, 'select_pickup_location')} color={textColor} />
 						)}
@@ -159,9 +159,9 @@ export const Settings_PickupLocations = () => {
 							</SelectDragIndicatorWrapper>
 								{locations.map((availableLocations, index) => {
 									if (availableLocations.code === location) {
-										return <SelectItem label={availableLocations.name} value={availableLocations.code} key={index} bgColor={theme['colors']['tertiary']['300']} sx={{ _text: { color: theme['colors']['tertiary']['500-text'] } }} />;
+										return <SelectItem label={availableLocations.displayName} value={availableLocations.code} key={index} bgColor={theme['colors']['tertiary']['300']} sx={{ _text: { color: theme['colors']['tertiary']['500-text'] } }} />;
 									}
-									return <SelectItem label={availableLocations.name} value={availableLocations.code} key={index} sx={{
+									return <SelectItem label={availableLocations.displayName} value={availableLocations.code} key={index} sx={{
 										_text: { color: textColor }
 									}} />;
 								})}
@@ -184,7 +184,7 @@ export const Settings_PickupLocations = () => {
 						onValueChange={(itemValue) => setLocation1Id(itemValue)}>
 						<SelectTrigger variant="outline" size="md">
 							{selectedLocation1Obj ? (
-								<SelectInput value={selectedLocation1Obj.name} color={textColor} />
+								<SelectInput value={selectedLocation1Obj.displayName} color={textColor} />
 							) : (
 								<SelectInput value={getTermFromDictionary(language, 'select_pickup_location')} color={textColor} />
 							)}
@@ -201,9 +201,9 @@ export const Settings_PickupLocations = () => {
 								</SelectDragIndicatorWrapper>
 									{locations.map((availableLocations, index) => {
 										if (availableLocations.code === location1Id) {
-											return <SelectItem label={availableLocations.name} value={availableLocations.code} key={index} bgColor={theme['colors']['tertiary']['300']} sx={{ _text: { color: theme['colors']['tertiary']['500-text'] } }} />;
+											return <SelectItem label={availableLocations.displayName} value={availableLocations.code} key={index} bgColor={theme['colors']['tertiary']['300']} sx={{ _text: { color: theme['colors']['tertiary']['500-text'] } }} />;
 										}
-										return <SelectItem label={availableLocations.name} value={availableLocations.code} key={index} sx={{
+										return <SelectItem label={availableLocations.displayName} value={availableLocations.code} key={index} sx={{
 											_text: { color: textColor }
 										}} />;
 									})}
@@ -224,7 +224,7 @@ export const Settings_PickupLocations = () => {
 						onValueChange={(itemValue) => setLocation2Id(itemValue)}>
 						<SelectTrigger variant="outline" size="md">
 							{selectedLocation2Obj ? (
-								<SelectInput value={selectedLocation2Obj.name} color={textColor} />
+								<SelectInput value={selectedLocation2Obj.displayName} color={textColor} />
 							) : (
 								<SelectInput value={getTermFromDictionary(language, 'select_pickup_location')} color={textColor} />
 							)}
@@ -241,9 +241,9 @@ export const Settings_PickupLocations = () => {
 								</SelectDragIndicatorWrapper>
 									{locations.map((availableLocations, index) => {
 										if (availableLocations.code === location2Id) {
-											return <SelectItem label={availableLocations.name} value={availableLocations.code} key={index} bgColor={theme['colors']['tertiary']['300']} sx={{ _text: { color: theme['colors']['tertiary']['500-text'] } }} />;
+											return <SelectItem label={availableLocations.displayName} value={availableLocations.code} key={index} bgColor={theme['colors']['tertiary']['300']} sx={{ _text: { color: theme['colors']['tertiary']['500-text'] } }} />;
 										}
-										return <SelectItem label={availableLocations.name} value={availableLocations.code} key={index} sx={{
+										return <SelectItem label={availableLocations.displayName} value={availableLocations.code} key={index} sx={{
 											_text: { color: textColor }
 										}} />;
 									})}
