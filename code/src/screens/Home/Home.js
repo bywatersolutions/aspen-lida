@@ -133,7 +133,7 @@ export const DiscoverHomeScreen = () => {
           setLoading(false);
      };
 
-     const onPressSettings = () => {
+     const showManageCategories = () => {
           navigateStack('MoreTab', 'MyPreferences_ManageBrowseCategories', { prevRoute: 'HomeScreen' });
      };
 
@@ -199,7 +199,7 @@ export const DiscoverHomeScreen = () => {
                     {category.map((item, index) => {
                          return <DisplayBrowseCategory category={item} />;
                     })}
-                    <ButtonOptions language={language} onPressSettings={onPressSettings} onRefreshCategories={onRefreshCategories} discoveryVersion={library.discoveryVersion} maxNum={maxNum} onLoadAllCategories={onLoadAllCategories} />
+                    <ButtonOptions language={language} showManageCategories={showManageCategories} onRefreshCategories={onRefreshCategories} discoveryVersion={library.discoveryVersion} maxNum={maxNum} onLoadAllCategories={onLoadAllCategories} />
                     {showErrorDialog && (
                          <DisplayErrorAlertDialog title={errorTitle} message={errorMessage} />
                     )}
@@ -212,7 +212,7 @@ const ButtonOptions = (props) => {
      const { theme } = React.useContext(ThemeContext);
      const [loading, setLoading] = React.useState(false);
      const [refreshing, setRefreshing] = React.useState(false);
-     const { language, onPressSettings, onRefreshCategories, discoveryVersion, maxNum, onLoadAllCategories } = props;
+     const { language, showManageCategories, onRefreshCategories, discoveryVersion, maxNum, onLoadAllCategories } = props;
 
      const version = formatDiscoveryVersion(discoveryVersion);
 
@@ -257,7 +257,7 @@ const ButtonOptions = (props) => {
                                    bg: theme['colors']['primary']['500'],
                               }}
                               onPress={() => {
-                                   onPressSettings();
+                                   showManageCategories();
                               }}>
                               <ButtonIcon as={Settings} color={theme['colors']['primary']['500-text']} mr="$1" size="sm" />
                               <ButtonText
@@ -301,7 +301,7 @@ const ButtonOptions = (props) => {
                               bg: theme['colors']['primary']['500'],
                          }}
                          onPress={() => {
-                              onPressSettings();
+                              showManageCategories();
                          }}>
                          <ButtonIcon as={Settings} color={theme['colors']['primary']['500-text']} mr="$1" size="sm" />
                          <ButtonText fontSize="$2xs" fontWeight="$medium" sx={{ color: theme['colors']['primary']['500-text'] }}>
