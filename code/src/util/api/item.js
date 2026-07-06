@@ -1,5 +1,6 @@
 import { GLOBALS } from '../globals';
 import { createApiClient } from './apiFactory';
+import { logDebugMessage, logErrorMessage, logInfoMessage, logWarnMessage, getErrorMessage } from '../logging';
 
 /**
  * Returns manifestation data for the given grouped work id and format
@@ -19,9 +20,9 @@ export async function getManifestation(itemId, format, language, url = null) {
      });
 
      return {
-          id: response.data?.result?.id ?? itemId,
-          format: response.data?.result?.format ?? format,
-          manifestation: response.data?.result?.manifestation ?? [],
+          id: response.data?.result.id ?? itemId,
+          format: response.data?.result.format ?? format,
+          manifestation: response.data?.result.manifestation ?? [],
      };
 }
 
@@ -46,20 +47,25 @@ export async function getVariations(itemId, format, language, url = null, variat
           recordId,
      });
 
-     const result = response.data?.result ?? {};
+     if (response.ok && response.data) {
+          const result = response.data.result ?? {};
 
-     return {
-          id: result.id ?? itemId,
-          format: result.format ?? format,
-          variations: result.variations ?? [],
-          volumeInfo: {
-               numItemsWithVolumes: result.numItemsWithVolumes ?? 0,
-               numItemsWithoutVolumes: result.numItemsWithoutVolumes ?? 0,
-               hasItemsWithoutVolumes: result.hasItemsWithoutVolumes ?? 0,
-               majorityOfItemsHaveVolumes: result.majorityOfItemsHaveVolumes ?? false,
-               alwaysPlaceVolumeHoldWhenVolumesArePresent: result.alwaysPlaceVolumeHoldWhenVolumesArePresent ?? false,
-          },
-     };
+          return {
+               id: result.id ?? itemId,
+               format: result.format ?? format,
+               variations: result.variations ?? [],
+               volumeInfo: {
+                    numItemsWithVolumes: result.numItemsWithVolumes ?? 0,
+                    numItemsWithoutVolumes: result.numItemsWithoutVolumes ?? 0,
+                    hasItemsWithoutVolumes: result.hasItemsWithoutVolumes ?? 0,
+                    majorityOfItemsHaveVolumes: result.majorityOfItemsHaveVolumes ?? false,
+                    alwaysPlaceVolumeHoldWhenVolumesArePresent: result.alwaysPlaceVolumeHoldWhenVolumesArePresent ?? false,
+               },
+          };
+     }else{
+          logErrorMessage('Error Loading Variations');
+          return null;
+     }
 }
 
 /**
@@ -82,9 +88,9 @@ export async function getRecords(itemId, format, source, language, url = null) {
      });
 
      return {
-          id: response.data?.result?.id ?? itemId,
-          format: response.data?.result?.format ?? format,
-          records: response.data?.result?.records ?? [],
+          id: response.data?.result.id ?? itemId,
+          format: response.data?.result.format ?? format,
+          records: response.data?.result.records ?? [],
      };
 }
 
@@ -109,7 +115,7 @@ export async function getFirstRecord(itemId, format, language, url = null) {
      let source = 'ils';
      let record = null;
 
-     if (response.ok && response.data?.result?.records) {
+     if (response.ok && response.data?.result.records) {
           const records = response.data.result.records;
           const firstKey = Object.keys(records)[0];
 
@@ -135,7 +141,7 @@ export async function getVolumes(id, url = null) {
 
      const response = await client.get('/ItemAPI?method=getVolumes', { id });
 
-     if (response.ok && response.data?.result?.volumes) {
+     if (response.ok && response.data?.result.volumes) {
           return [...response.data.result.volumes].sort((a, b) => (a.key ?? '').toString().localeCompare((b.key ?? '').toString()));
      }
 
@@ -160,10 +166,10 @@ export async function getRelatedRecord(id, recordId, format, url = null) {
      });
 
      return {
-          id: response.data?.result?.id ?? id,
-          recordId: response.data?.result?.record ?? recordId,
-          format: response.data?.result?.format ?? format,
-          manifestation: response.data?.result?.record ?? [],
+          id: response.data?.result.id ?? id,
+          recordId: response.data?.result.record ?? recordId,
+          format: response.data?.result.format ?? format,
+          manifestation: response.data?.result.record ?? [],
      };
 }
 
@@ -186,7 +192,7 @@ export async function getCopies(recordId, language = 'en', variationId, url = nu
 
      return {
           recordId,
-          copies: response.data?.result?.copies ?? [],
+          copies: response.data?.result.copies ?? [],
      };
 }
 
