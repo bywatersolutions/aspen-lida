@@ -2,7 +2,7 @@ import { PATRON } from '../globals';
 import { logDebugMessage, logErrorMessage, logWarnMessage } from '../logging';
 import { popToast } from '../../components/loadError';
 import * as WebBrowser from 'expo-web-browser';
-import { getTermFromDictionary } from '../../translations/TranslationService';
+import { getTermFromDictionary } from '../../translations/TranslationHelper';
 import { checkoutItem, overDriveSample, placeHold } from './user';
 import { addDays, formatLocalDateYYYYMMDD, orderByFields, parseToDate } from '../../helpers/helpers';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,7 +26,7 @@ export function formatPickupLocations(data) {
 /**
  * Complete the action on the item, i.e. checkout, hold, or view sample
  * Parameters:
-
+ * @param {object} toast - The instance returned by useToast()
  * @param {string} id
  * @param {string} actionType
  * @param {string} patronId
@@ -42,7 +42,7 @@ export function formatPickupLocations(data) {
  * @param {string} variationId
  * @param {string} bibId
  **/
-export async function completeAction(id, actionType, patronId, formatId = '', sampleNumber = '', pickupBranch = '', sublocation = '', rememberPickupLocation = '', url, volumeId = '', holdType = '', holdNotificationPreferences, variationId = '', bibId = '') {
+export async function completeAction(toast, id, actionType, patronId, formatId = '', sampleNumber = '', pickupBranch = '', sublocation = '', rememberPickupLocation = '', url, volumeId = '', holdType = '', holdNotificationPreferences, variationId = '', bibId = '') {
      logDebugMessage('Completing action ' + actionType);
      const recordId = id.split(':');
      const source = recordId[0];
@@ -80,11 +80,11 @@ export async function completeAction(id, actionType, patronId, formatId = '', sa
                return await placeHold(url, itemId, source, patronId, pickupBranch, sublocation, rememberPickupLocation, volumeId, holdType, id, holdNotificationPreferences, variationId);
           }
      } else if (actionType.includes('sample')) {
-          return await overDriveSample(url, formatId, itemId, sampleNumber);
+          return await overDriveSample(toast, url, formatId, itemId, sampleNumber);
      }
 }
 
-export async function openSideLoad(redirectUrl) {
+export async function openSideLoad(toast, redirectUrl) {
      if (redirectUrl) {
           await WebBrowser.openBrowserAsync(redirectUrl)
                .then((res) => {
@@ -102,20 +102,20 @@ export async function openSideLoad(redirectUrl) {
                                    })
                                    .catch(async (error) => {
                                         logWarnMessage('Unable to close previous browser session.');
-                                        popToast(getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
+                                        popToast(toast, getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
                                    });
                          } catch (error) {
                               logErrorMessage('Tried to open again but still unable');
                               logErrorMessage(error);
-                              popToast(getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
+                              popToast(toast, getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
                          }
                     } else {
                          logWarnMessage('Unable to open browser window.');
-                         popToast(getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
+                         popToast(toast, getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
                     }
                });
      } else {
-          popToast(getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_no_valid_url'), 'error');
+          popToast(toast, getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_no_valid_url'), 'error');
           logErrorMessage('No redirect URL provided for side load');
      }
 }
@@ -310,26 +310,4 @@ export function formatReadingHistory(data) {
           sort: data.sort ?? 'checkedOut',
           message: data.message ?? null,
      };
-}
-
-export function resolveReactivationDate(selectedReactivationDate, allowIndefinite = false) {
-     const today = formatLocalDateYYYYMMDD();
-
-     const selectedDate = parseToDate(selectedReactivationDate);
-     if (selectedDate) {
-          const selected = formatLocalDateYYYYMMDD(selectedDate);
-
-          if (selected === today) {
-               if (allowIndefinite) return null;
-               return formatLocalDateYYYYMMDD(addDays(new Date(), 30));
-          }
-
-          return selected;
-     }
-
-     if (!allowIndefinite) {
-          return formatLocalDateYYYYMMDD(addDays(new Date(), 30));
-     }
-
-     return null;
 }

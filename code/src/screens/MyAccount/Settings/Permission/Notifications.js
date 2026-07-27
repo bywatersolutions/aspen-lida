@@ -1,9 +1,9 @@
-import { ChevronLeftIcon, Switch, ScrollView, AlertDialog, AlertDialogBackdrop, HStack, VStack, Pressable, Icon, Text, Center, Button, ButtonText, ButtonIcon, ButtonGroup, Heading, Box, Accordion, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AccordionItem, AccordionContent, AccordionContentText, AccordionHeader, AccordionTrigger, AccordionTitleText, AccordionIcon } from '@gluestack-ui/themed';
+import { ChevronLeftIcon, Switch, ScrollView, AlertDialog, AlertDialogBackdrop, HStack, VStack, Pressable, Icon, Text, Center, Button, ButtonText, ButtonIcon, ButtonGroup, Heading, Box, Accordion, AlertDialogBody, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AccordionItem, AccordionContent, AccordionContentText, AccordionHeader, AccordionTrigger, AccordionTitleText, AccordionIcon, useToast } from '@gluestack-ui/themed';
 import React from 'react';
 import * as Notifications from 'expo-notifications';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { loadingSpinner } from '../../../../components/loadingSpinner';
 import { LanguageContext, LibrarySystemContext, ThemeContext, UserContext } from '../../../../context/initialContext';
 import { navigate } from '../../../../helpers/RootNavigator';
@@ -11,17 +11,16 @@ import { getTermFromDictionary } from '../../../../translations/TranslationServi
 import { ChevronRight, ChevronUp, ChevronDown } from 'lucide-react-native';
 import Constants from 'expo-constants';
 import { useNotificationPermissions, useNotificationPreferences } from '../../../../hooks/useNotifications';
-import { refreshProfile } from '../../../../util/api/user';
-import { logDebugMessage, logWarnMessage, getErrorMessage } from '../../../../util/logging';
+import {logDebugMessage, logWarnMessage, getErrorMessage, logErrorMessage} from '../../../../util/logging';
 
 export const NotificationPermissionStatus = () => {
     const { language } = React.useContext(LanguageContext);
     const { textColor } = React.useContext(ThemeContext);
     const { library } = React.useContext(LibrarySystemContext);
-    const { user, updateExpoToken, updateAspenToken, expoToken, aspenToken, userDebugMessage, updateUserDebugMessage } = React.useContext(UserContext);
+    const { updateExpoToken, expoToken, updateUserDebugMessage } = React.useContext(UserContext);
     const navigation = useNavigation();
 
-    const { permissionStatus, checkAndUpdatePermissions } = useNotificationPermissions(library, user, updateExpoToken, updateAspenToken, updateUserDebugMessage);
+    const { permissionStatus, checkAndUpdatePermissions } = useNotificationPermissions(library, updateExpoToken, updateUserDebugMessage);
 
     // Check permissions on mount
     React.useEffect(() => {
@@ -43,7 +42,7 @@ export const NotificationPermissionStatus = () => {
     // Check permissions when tokens change
     React.useEffect(() => {
         checkAndUpdatePermissions('Token change effect');
-    }, [expoToken, aspenToken]);
+    }, [expoToken]);
 
     return (
         <Pressable onPress={() => navigate('PermissionNotificationDescription', { permissionStatus })} pb="$3">
@@ -70,20 +69,21 @@ export const NotificationPermissionDescription = () => {
     const { theme, textColor } = React.useContext(ThemeContext);
     const { language } = React.useContext(LanguageContext);
     const { library } = React.useContext(LibrarySystemContext);
-    const { user, updateNotificationSettings, updateExpoToken, aspenToken, updateAspenToken, notificationSettings, expoToken, userDebugMessage, updateUserDebugMessage } = React.useContext(UserContext);
+    const { updateExpoToken, notificationSettings, expoToken, updateUserDebugMessage } = React.useContext(UserContext);
+    const toast = useToast();
 
     const {
         permissionStatus,
         isLoading,
         addNotificationPermissions,
         revokeNotificationPermissions
-    } = useNotificationPermissions(library, user, updateExpoToken, updateAspenToken, updateUserDebugMessage);
+    } = useNotificationPermissions(library, updateExpoToken, updateUserDebugMessage);
 
     const {
         preferences,
         updatePreference,
         loadPreferences
-    } = useNotificationPreferences(library, expoToken);
+    } = useNotificationPreferences(toast, library, expoToken);
 
     React.useLayoutEffect(() => {
         if (prevRoute === 'notifications_onboard') {
@@ -91,15 +91,17 @@ export const NotificationPermissionDescription = () => {
                 headerLeft: () => (
                     <Button
                         bg="transparent"
-                        onPress={() => navigate('MoreMenu')}
+                        onPress={() => {
+                            navigation.goBack();
+                        }}
                         mr="$3"
-                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                        p="$1"
                     >
                         <ButtonIcon
                             size="lg"
                             variant="outline"
                             borderWidth={0}
-                            color={theme['colors']['primary']['baseContrast']}
+                            color={theme['tokens']['colors']['primary']['baseContrast']}
                             as={ChevronLeftIcon}
                         />
                     </Button>
@@ -108,65 +110,53 @@ export const NotificationPermissionDescription = () => {
         }
     }, [navigation, prevRoute, theme]);
 
-    React.useEffect(() => {
-         if (expoToken) {
-              const refreshToggles = async () => {
-                   await refreshProfile(library.baseUrl).then(async (result) => {
-                        if (result.ok) {
-                             const data = result.data.result;
-                             updateNotificationSettings(data.notification_preferences, language, false);
-                             await loadPreferences();
-                        } else {
-                             logWarnMessage('Could not refresh profile while loading notification preferences.');
-                             logDebugMessage(result);
-                             getErrorMessage(result.code ?? 0, result.problem);
-                        }
-              });
-              }
-              refreshToggles();
-         }
-    }, [expoToken]);
 
-    React.useEffect(() => {
-        // Refetch preferences when permission status or expoToken changes
-        if (permissionStatus && expoToken) {
-            loadPreferences();
-        }
-    }, [permissionStatus, expoToken]);
 
-    const defaultSettings = {
-        notifySavedSearch: { option: 'notifySavedSearch', label: getTermFromDictionary(language, 'saved_searches') },
-        notifyCustom: { option: 'notifyCustom', label: getTermFromDictionary(language, 'library_updates') },
-        notifyAccount: { option: 'notifyAccount', label: getTermFromDictionary(language, 'account_updates') }
-    };
+     React.useEffect(() => {
+          // Refetch preferences when permission status or expoToken changes
+          if (permissionStatus && expoToken) {
+               logDebugMessage("Fetching Preferences because permission status or expoToken changed")
+               loadPreferences(expoToken);
+          }
+     }, [permissionStatus, expoToken]);
 
-    // Use default settings if notificationSettings is not available
-    const settings = notificationSettings || defaultSettings;
+     const defaultSettings = {
+          notifySavedSearch: { option: 'notifySavedSearch', label: getTermFromDictionary(language, 'saved_searches') },
+          notifyCustom: { option: 'notifyCustom', label: getTermFromDictionary(language, 'library_updates') },
+          notifyAccount: { option: 'notifyAccount', label: getTermFromDictionary(language, 'account_updates') }
+     };
 
-    React.useEffect(() => {
-        const checkCurrentPermissions = async () => {
-            const { status } = await Notifications.getPermissionsAsync();
-            if (status === 'granted') {
-                // Always try to load preferences when permissions are granted
-                if (expoToken) {
-                    await loadPreferences();
-                } else {
-                    // If we don't have a token but permissions are granted, try to get one
-                    await handlePermissionUpdate();
-                }
-            }
-        };
+     // Use default settings if notificationSettings is not available
+     const settings = notificationSettings || defaultSettings;
 
-        checkCurrentPermissions();
-    }, []);
+     /*React.useEffect(() => {
+          const checkCurrentPermissions = async () => {
+               const { status } = await Notifications.getPermissionsAsync();
+               if (status === 'granted') {
+                    // Always try to load preferences when permissions are granted
+                    if (expoToken) {
+                         logDebugMessage("Loading Preferences as part of checkCurrentPermissions " + expoToken);
+                         await loadPreferences(expoToken);
+                    } else {
+                         // If we don't have a token but permissions are granted, try to get one
+                         logDebugMessage("Do not have a valid expoToken in checkCurrentPermissions, getting a token");
+                         await handlePermissionUpdate();
+                    }
+               }
+          };
 
-    const handlePermissionUpdate = async () => {
-        const result = await addNotificationPermissions();
-        if (result) {
-            // Force a preference refresh after permissions are granted
-            await loadPreferences();
-        }
-    };
+          checkCurrentPermissions();
+     }, []);*/
+
+     const handlePermissionUpdate = async () => {
+          //Will return either false or the expoToken that was added
+          const result = await addNotificationPermissions();
+          if (result) {
+               // Force a preference refresh after permissions are granted
+               logDebugMessage("Loading preferences as pert of handlePermissionUpdate");
+               await loadPreferences(result);
+          }
+     };
 
     // Add effect to check permissions when screen is focused
     React.useEffect(() => {
@@ -186,21 +176,22 @@ export const NotificationPermissionDescription = () => {
         }
     };
 
-    const updatePermissionStatus = (status) => {
-        // This function will update the permission status in the context and trigger a reload of preferences if needed
-        if (status) {
-            // If permissions are granted, load preferences
-            loadPreferences();
-        } else {
-            // If permissions are revoked, you might want to clear preferences or handle it accordingly
-            // For now, we'll just log out the user as an example
-            logDebugMessage('Permissions revoked, status is ' + status + ' (handling accordingly...)');
-        }
-    };
+     const updatePermissionStatus = (status) => {
+          // This function will update the permission status in the context and trigger a reload of preferences if needed
+          if (status) {
+               // If permissions are granted, load preferences
+               logDebugMessage("Loading preferences as part of updatePermissionStatus")
+               loadPreferences();
+          } else {
+               // If permissions are revoked, you might want to clear preferences or handle it accordingly
+               // For now, we'll just log out the user as an example
+               logDebugMessage('Permissions revoked, status is ' + status + ' (handling accordingly...)');
+          }
+     };
 
-    if (isLoading) {
-        return loadingSpinner();
-    }
+     if (isLoading) {
+          return loadingSpinner();
+     }
 
     return (
         <ScrollView p="$5">
@@ -223,15 +214,13 @@ export const NotificationPermissionDescription = () => {
 
                     <NotificationPermissionUsage />
 
-                    {permissionStatus && (
-                        <Box mb="$5">
-                            <NotificationPreferencesSection
-                                preferences={preferences}
-                                updatePreference={updatePreference}
-                                notificationSettings={settings}
-                            />
-                        </Box>
-                    )}
+                    <Box mb="$5">
+                        <NotificationPreferencesSection
+                            preferences={preferences}
+                            updatePreference={updatePreference}
+                            notificationSettings={settings}
+                        />
+                    </Box>
                 </Box>
                 <NotificationPermissionUpdate
                     permissionStatus={permissionStatus}
@@ -266,7 +255,7 @@ const NotificationPermissionUsage = () => {
     const { textColor } = React.useContext(ThemeContext);
 
     return (
-        <Accordion variant="unfilled" w="100%" size="sm">
+        <Accordion variant="unfilled" width="$full" size="sm">
             <AccordionItem value="description">
                 <AccordionHeader>
                     <AccordionTrigger px="$0">
@@ -307,19 +296,14 @@ const NotificationPermissionUpdate = ({ permissionStatus, addNotificationPermiss
                 await revokeNotificationPermissions();
             } else {
                 // First request permissions without any options
-                const { status } = await Notifications.requestPermissionsAsync();
-
-                if (status === 'granted') {
-                    const granted = await addNotificationPermissions();
-                    if (!granted) {
-                        setShowAlertDialog(true);
-                    }
-                } else {
+                const granted = await addNotificationPermissions();
+                if (!granted) {
                     setShowAlertDialog(true);
                 }
             }
         } catch (error) {
-            console.error('Error updating permissions:', error);
+            logErrorMessage('Error updating permissions:');
+            logErrorMessage(error);
             setShowAlertDialog(true);
         } finally {
             setIsUpdating(false);
@@ -330,10 +314,10 @@ const NotificationPermissionUpdate = ({ permissionStatus, addNotificationPermiss
         <Center>
             <Button
                 onPress={handleUpdatePermissions}
-                bgColor={theme['colors']['primary']['500']}
+                bgColor={theme.tokens.colors.primary['500']}
                 isDisabled={isUpdating}
             >
-                <ButtonText color={theme['colors']['primary']['500-text']}>
+                <ButtonText color={theme.tokens.colors.primary['500-text']}>
                     {permissionStatus ?
                         getTermFromDictionary(language, 'revoke_device_settings') :
                         getTermFromDictionary(language, 'update_device_settings')}
@@ -347,8 +331,8 @@ const NotificationPermissionUpdate = ({ permissionStatus, addNotificationPermiss
                 <AlertDialogBackdrop />
                 <AlertDialogContent
                     bgColor={colorMode === 'light' ?
-                        theme['colors']['warmGray']['50'] :
-                        theme['colors']['coolGray']['700']}
+                        "$warmGray50" :
+                        "$coolGray700"}
                 >
                     <AlertDialogHeader>
                         <Heading color={textColor}>
@@ -363,15 +347,15 @@ const NotificationPermissionUpdate = ({ permissionStatus, addNotificationPermiss
                         </Text>
                     </AlertDialogBody>
                     <AlertDialogFooter>
-                        <ButtonGroup flexDirection="column" alignItems="stretch" w="100%">
+                        <ButtonGroup flexDirection="column" alignItems="stretch" width="$full">
                             <Button
                                 onPress={() => {
                                     Linking.openSettings();
                                     setShowAlertDialog(false);
                                 }}
-                                bgColor={theme['colors']['primary']['500']}
+                                bgColor={theme.tokens.colors.primary['500']}
                             >
-                                <ButtonText color={theme['colors']['primary']['500-text']}>
+                                <ButtonText color={theme.tokens.colors.primary['500-text']}>
                                     {getTermFromDictionary(language, 'open_device_settings')}
                                 </ButtonText>
                             </Button>

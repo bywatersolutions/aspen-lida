@@ -1,9 +1,10 @@
-import { Box, HStack, Text } from 'native-base';
+import { Box, HStack, Text } from '@gluestack-ui/themed';
 import React from 'react';
 import { LanguageContext, LibraryBranchContext, LibrarySystemContext } from '../../../context/initialContext';
 // custom components and helper files
 import { getLanguageDisplayName, getTranslatedTermsForUserPreferredLanguage, LanguageSwitcher, translationsLibrary } from '../../../translations/TranslationService';
 import { saveLanguage } from '../../../util/api/user';
+import {logErrorMessage} from "../../../util/logging";
 
 export const Settings_LanguageScreen = () => {
      const { library } = React.useContext(LibrarySystemContext);
@@ -20,7 +21,7 @@ export const Settings_LanguageScreen = () => {
                          updateDictionary(translationsLibrary);
                     });
                } else {
-                    console.log('there was an error updating the language...');
+                    logErrorMessage('there was an error updating the language...');
                }
           });
      };

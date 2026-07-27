@@ -69,7 +69,7 @@ export const HoldNotificationPreferences = (props) => {
                                         {getTermFromDictionary(language, 'hold_phone_number')}
                                    </FormControlLabelText>
                               </FormControlLabel>
-                              <Input borderColor={colorMode === 'light' ? theme['colors']['coolGray']['500'] : theme['colors']['gray']['300']}>
+                              <Input borderColor={colorMode === 'light' ? "$coolGray500" : "$warmGray300"}>
                                    <InputField color={textColor} name="phoneNumber" defaultValue={phoneNumber} accessibilityLabel={getTermFromDictionary(language, 'hold_phone_number')} onChangeText={(value) => setPhoneNumber(value)} />
                               </Input>
                          </FormControl>
@@ -105,18 +105,18 @@ export const HoldNotificationPreferences = (props) => {
                                                   {smsCarrier && smsCarrier !== -1 ? (
                                                        _.map(smsCarriers, function (carrier, selectedIndex, array) {
                                                             if (selectedIndex === smsCarrier) {
-                                                                 return <SelectInput placeholder="Select a Carrier" value={carrier} color={textColor} />;
+                                                                 return <SelectInput py={0} placeholder="Select a Carrier" value={carrier} color={textColor} />;
                                                             }
                                                        })
                                                   ) : (
-                                                       <SelectInput placeholder="Select a Carrier" color={textColor} />
+                                                       <SelectInput py={0} placeholder="Select a Carrier" color={textColor} />
                                                   )}
                                                   <SelectIcon mr="$3" as={ChevronDownIcon} color={textColor} />
                                              </SelectTrigger>
-                                             <SelectPortal useRNModal={true}>
+                                             <SelectPortal>
                                                   <SelectBackdrop />
                                                   <SelectContent
-                                                       bgColor={colorMode === 'light' ? theme['colors']['warmGray']['50'] : theme['colors']['coolGray']['700']}
+                                                       bgColor={colorMode === 'light' ? "$warmGray50" : "$coolGray700"}
                                                        pb={Platform.OS === 'android' ? insets.bottom + 16 : '$4'}
                                                   >
                                                        <SelectDragIndicatorWrapper>
@@ -125,9 +125,9 @@ export const HoldNotificationPreferences = (props) => {
                                                        <SelectScrollView>
                                                             {_.map(smsCarriers, function (carrier, index, array) {
                                                                  if (index === smsCarrier) {
-                                                                      return <SelectItem key={index} label={carrier} value={index}  bgColor={theme['colors']['tertiary']['300']} sx={{ _text: { color: theme['colors']['tertiary']['500-text'] } }} />;
+                                                                      return <SelectItem key={index} label={carrier} value={index}  bgColor={theme.tokens.colors.tertiary['300']} sx={{ _text: { color: theme.tokens.colors.tertiary['500-text'] } }} />;
                                                                  }
-                                                                 return <SelectItem key={index} label={carrier} value={index} bgColor={smsCarrier === (index) ? theme['colors']['tertiary']['300'] : ''} sx={{ _text: { color: smsCarrier === (index) ? theme['colors']['tertiary']['500-text'] : textColor } }} />;
+                                                                 return <SelectItem key={index} label={carrier} value={index} bgColor={smsCarrier === (index) ? theme.tokens.colors.tertiary['300'] : ''} sx={{ _text: { color: smsCarrier === (index) ? theme.tokens.colors.tertiary['500-text'] : textColor } }} />;
                                                             })}
                                                        </SelectScrollView>
                                                   </SelectContent>
@@ -145,7 +145,7 @@ export const HoldNotificationPreferences = (props) => {
                                                   {getTermFromDictionary(language, 'hold_sms_number')}
                                              </FormControlLabelText>
                                         </FormControlLabel>
-                                        <Input borderColor={colorMode === 'light' ? theme['colors']['coolGray']['500'] : theme['colors']['gray']['300']}>
+                                        <Input borderColor={colorMode === 'light' ? "$coolGray500" : "$warmGray300"}>
                                              <InputField color={textColor} name="smsNumber" defaultValue={smsNumber} accessibilityLabel={getTermFromDictionary(language, 'hold_sms_number')} onChangeText={(value) => setSMSNumber(value)} />
                                         </Input>
                                         <FormControlHelper mb="$2">

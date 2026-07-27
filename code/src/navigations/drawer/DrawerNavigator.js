@@ -1,36 +1,35 @@
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import React from 'react';
-import { Platform } from 'react-native';
+import { Dimensions, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemeContext } from '../../context/initialContext';
-import TabNavigator from '../tab/TabNavigator';
 import { DrawerContent } from './DrawerContent';
+import { useToken } from '@gluestack-ui/themed';
+import { logDebugMessage, logWarnMessage, logErrorMessage, getErrorMessage } from '../../util/logging.js';
 
 const Drawer = createDrawerNavigator();
 
 const AccountDrawer = () => {
-     const { theme, colorMode } = React.useContext(ThemeContext);
      const insets = useSafeAreaInsets();
-     const screenBackgroundColor = colorMode === 'light' ? theme['colors']['warmGray']['50'] : theme['colors']['coolGray']['800'];
+     const { height: screenHeight } = Dimensions.get('window');
      return (
           <Drawer.Navigator
                initialRouteName="TabsNavigator"
                screenOptions={{
                     drawerType: 'front',
-                    drawerHideStatusBarOnOpen: true,
+                    drawerHideStatusBarOnOpen: false,
                     drawerPosition: 'left',
                     headerShown: false,
                     backBehavior: 'none',
                     lazy: false,
                     drawerStyle: {
-                         backgroundColor: screenBackgroundColor,
-                         paddingBottom: Platform.OS === 'android' ? insets.bottom : 0,
+                         width: Dimensions.get('window').width * 0.8,
                     },
                }}
                drawerContent={(props) => <DrawerContent {...props} />}>
                <Drawer.Screen
                     name="TabsNavigator"
-                    component={TabNavigator}
+                    getComponent={() => require('../tab/TabNavigator').default}
                     screenOptions={{
                          headerShown: false,
                          lazy: false,

@@ -3,11 +3,12 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import _ from 'lodash';
 import moment from 'moment';
-import { Badge, Box, Button, Divider, Heading, ScrollView, Text, useColorModeValue, useToken } from 'native-base';
+import { Badge, BadgeText, Box, Button, ButtonText, Divider, Heading, ScrollView, Text, useToken } from '@gluestack-ui/themed';
+import { colorMode, useColorModeValue } from '../../themes/theme';
 import React from 'react';
 
 import { DisplaySystemMessage } from '../../components/Notifications';
-import { LanguageContext, LibraryBranchContext, LibrarySystemContext, SystemMessagesContext, UserContext } from '../../context/initialContext';
+import { LanguageContext, LibraryBranchContext, LibrarySystemContext, SystemMessagesContext, UserContext, ThemeContext } from '../../context/initialContext';
 import { navigate } from '../../helpers/RootNavigator';
 import { getTermFromDictionary } from '../../translations/TranslationService';
 import AdditionalInformation from './AdditionalInformation';
@@ -15,19 +16,19 @@ import ContactButtons from './ContactButtons';
 import DisplayMap from './DisplayMap';
 // custom components and helper files
 import Hours from './Hours';
+import {logDebugMessage} from "../../util/logging";
 
 const blurhash = 'MHPZ}tt7*0WC5S-;ayWBofj[K5RjM{ofM_';
 
 export const MyLibrary = () => {
-     const { user } = React.useContext(UserContext);
      const { library } = React.useContext(LibrarySystemContext);
      const { location, locations } = React.useContext(LibraryBranchContext);
      const { language } = React.useContext(LanguageContext);
-     const [openToday, setOpenToday] = React.useState(false);
      const queryClient = useQueryClient();
      const { systemMessages, updateSystemMessages } = React.useContext(SystemMessagesContext);
+     const { textColor, theme } = React.useContext(ThemeContext);
 
-     const bgColor = useToken('colors', useColorModeValue('warmGray.50', 'coolGray.800'));
+     const bgColor = (colorMode === 'light' ? "$warmGray50" : "$coolGray800");
      const showSystemMessage = () => {
           if (_.isArray(systemMessages)) {
                return systemMessages.map((obj, index, collection) => {
@@ -71,11 +72,11 @@ export const MyLibrary = () => {
                          if (!stillClosed) {
                               isClosedToday = true;
                               let openingTime = moment(openTime).format('h:mm A');
-                              hoursLabel = 'Closed until ' + openingTime;
+                              hoursLabel = getTermFromDictionary(language, 'closed_until') + ' ' + openingTime;
                          } else {
                               isClosedToday = false;
                               let closingTime = moment(closeTime).format('h:mm A');
-                              hoursLabel = 'Open until ' + closingTime;
+                              hoursLabel = getTermFromDictionary(language, 'open_until') + ' ' + closingTime;
                          }
                     }
                }
@@ -87,7 +88,7 @@ export const MyLibrary = () => {
 
      const key = 'location_' + location.locationId;
 
-     console.log(key + ':' + location.locationImage);
+     logDebugMessage(key + ':' + location.locationImage);
 
      const selectLocations = () => {
           navigate('AllLocations');
@@ -97,48 +98,52 @@ export const MyLibrary = () => {
           <ScrollView>
                {location.locationImage ? (
                     <>
-                         <LinearGradient height={200} width="100%" locations={[0.45, 1]} colors={['transparent', bgColor]} zIndex={0} position="absolute" left={0} top={0} />
                          <Image
                               alt={location.displayName}
                               source={location.locationImage}
                               style={{
                                    width: '100%',
                                    height: 200,
-                                   borderRadius: 4,
+                                   borderRadius: "$sm",
                                    zIndex: -1,
-                                   position: 'absolute',
-                                   left: 0,
-                                   top: 0,
                               }}
                               placeholder={blurhash}
                               transition={1000}
                               contentFit="cover"
                          />
+
                     </>
                ) : null}
-               <Box safeArea={5} mt={location.locationImage ? 40 : 0}>
+               <Box safeArea={5} mt={5} mx="$2" zIndex={200}>
                     {showSystemMessage()}
-                    {library.displayName !== location.displayName ? <Heading mb={2}>{location.displayName}</Heading> : <Heading mb={1}>{library.displayName}</Heading>}
-                    {location.address ? <Text>{location.address}</Text> : null}
+                    {library.displayName !== location.displayName ? <Heading color={textColor} mb={2}>{location.displayName}</Heading> : <Heading color={textColor} mb={1}>{library.displayName}</Heading>}
+                    {location.address ? <Text color={textColor}>{location.address}</Text> : null}
                     {location.phone ? (
-                         <Text>
-                              {getTermFromDictionary(language, 'phone')}: {location.phone}
+                         <Text color={textColor}>
+                              <Text color={textColor}>{getTermFromDictionary(language, 'phone')}: </Text>
+                              <Text color={textColor}>{location.phone}</Text>
                          </Text>
                     ) : null}
                     {hasHours ? (
-                         <Text mt={4} mb={2}>
-                              <Badge colorScheme={isClosedToday ? 'error' : 'success'}>{hoursLabel}</Badge>
+                         <Text color={textColor} mt={4} mb={2}>
+                              <Badge colorScheme={isClosedToday ? 'error' : 'success'} alignSelf="flex-start">
+                                   <BadgeText>
+                                        {hoursLabel}
+                                   </BadgeText>
+                              </Badge>
                          </Text>
                     ) : null}
                     <DisplayMap data={location} />
-                    <ContactButtons data={location} />
-                    {hasHours ? <Hours data={location} /> : null}
-                    <AdditionalInformation data={location} />
+                    <Box mt={4}>
+                         <ContactButtons data={location} />
+                         {hasHours ? <Hours data={location} /> : null}
+                         <AdditionalInformation data={location} />
+                    </Box>
                     {_.size(locations) > 1 ? (
                          <>
                               <Divider mt={5} mb={2} />
-                              <Button variant="ghost" size="sm" onPress={selectLocations}>
-                                   {getTermFromDictionary(language, 'view_all_locations')}
+                              <Button variant="ghost" size="sm" onPress={selectLocations} bgColor={theme.tokens.colors.primary['500']}>
+                                   <ButtonText color={theme.tokens.colors.primary['500-text']}>{getTermFromDictionary(language, 'view_all_locations')}</ButtonText>
                               </Button>
                          </>
                     ) : null}

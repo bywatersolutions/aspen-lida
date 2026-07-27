@@ -1,8 +1,8 @@
-import { useToken } from '@gluestack-style/react';
+import { useToken } from '@gluestack-ui/themed';
 import * as Device from 'expo-device';
 import _ from 'lodash';
 import React, { useState } from 'react';
-import { getTermFromDictionary } from '../translations/TranslationService';
+import { getTermFromDictionary } from '../translations/TranslationHelper';
 import { BRANCH, PATRON } from '../util/globals';
 import { logDebugMessage, logInfoMessage, logWarnMessage, logErrorMessage } from '../util/logging.js';
 import { formatDiscoveryVersion } from '../helpers/helpers';
@@ -39,12 +39,10 @@ export const UserContext = React.createContext({
      notificationSettings: [],
      updateNotificationSettings: () => {},
      expoToken: false,
-     aspenToken: false,
      userDebugMessage: '',
      updateUserDebugMessage: () => {},
      resetUser: () => {},
      updateExpoToken: () => {},
-     updateAspenToken: () => {},
      notificationOnboard: 0,
      updateNotificationOnboard: () => {},
      notificationOnboardStatus: false,
@@ -161,7 +159,7 @@ export const SearchContext = React.createContext({
 export const ThemeProvider = ({ children }) => {
      const [theme, setTheme] = useState([]);
      const [colorMode, setColorMode] = useState('light');
-     const [textColor, setTextColor] = useState('');
+     const [textColor, setTextColor] = useState('textLight50');
      const darkText = useToken('colors', 'textLight950');
      const lightText = useToken('colors', 'textLight50');
 
@@ -170,22 +168,24 @@ export const ThemeProvider = ({ children }) => {
      };
 
      const updateColorMode = (data) => {
-          setColorMode(data);
-          logDebugMessage('Updated color mode in context');
-          if (textColor === '') {
-               if (data === 'light') {
-                    updateTextColor(darkText);
-               }
+          if (data !== colorMode) {
+               setColorMode(data);
+               logDebugMessage('Updated color mode in context to ' + data);
+          }
+          if (data === 'light') {
+               updateTextColor(darkText);
+          }
 
-               if (data === 'dark') {
-                    updateTextColor(lightText);
-               }
+          if (data === 'dark') {
+               updateTextColor(lightText);
           }
      };
 
      const updateTextColor = (data) => {
-          setTextColor(data);
-          logDebugMessage('Updated text color in context');
+          if (data != textColor) {
+               setTextColor(data);
+               logDebugMessage('Updated text color in context');
+          }
      };
 
      const resetTheme = () => {
@@ -328,14 +328,6 @@ export const LibraryBranchProvider = ({ children }) => {
      const updateLocation = (data) => {
           setLocation(data);
 
-          if (!_.isUndefined(data.vdxFormId)) {
-               BRANCH.vdxFormId = data.vdxFormId;
-          }
-
-          if (!_.isUndefined(data.vdxLocation)) {
-               BRANCH.vdxLocation = data.vdxLocation;
-          }
-
           logDebugMessage('updated LibraryBranchContext');
      };
 
@@ -401,7 +393,6 @@ export const UserProvider = ({ children }) => {
      const [notificationOnboard, setNotificationOnboard] = useState(0);
      const [appPreferences, setAppPreferences] = useState([]);
      const [expoToken, setExpoToken] = useState(false);
-     const [aspenToken, setAspenToken] = useState(false);
      const [userDebugMessage, setUserDebugMessage] = useState([]);
      const [seenNotificationOnboardPrompt, setSeenNotificationOnboardPrompt] = useState(true);
      const [notificationHistory, setNotificationHistory] = useState([]);
@@ -416,6 +407,7 @@ export const UserProvider = ({ children }) => {
 
      const updateUser = (data) => {
           if (user !== data) {
+               logDebugMessage("User data changed, updating user");
                if (_.isObject(data) && !_.isUndefined(data.lastListUsed)) {
                     PATRON.listLastUsed = data.lastListUsed;
                }
@@ -440,7 +432,7 @@ export const UserProvider = ({ children }) => {
                     updateUserCheckoutSortMethod(data.checkoutSort);
                }
 
-               logDebugMessage('updated UserContext');
+               logDebugMessage('Finished updating UserContext');
           } else {
                logDebugMessage("User data hasn't changed");
           }
@@ -560,7 +552,6 @@ export const UserProvider = ({ children }) => {
                     );
                     setNotificationSettings(settings);
                     setExpoToken(deviceSettings[0]?.token ?? false);
-                    setAspenToken(true);
 
                     if (deviceSettings && _.isObject(deviceSettings)) {
                          if (_.isObject(deviceSettings[0])) {
@@ -576,7 +567,6 @@ export const UserProvider = ({ children }) => {
                } else {
                     logDebugMessage('No settings found for this device model yet');
                     setExpoToken(false);
-                    setAspenToken(false);
 
                     const deviceSettings = _.filter(data, { device: 'Unknown' });
                     if (deviceSettings && _.isObject(deviceSettings)) {
@@ -618,7 +608,6 @@ export const UserProvider = ({ children }) => {
                          );
                          setNotificationSettings(settings);
                          setExpoToken(false);
-                         setAspenToken(true);
                     }
 
                     if (userOnboardStatus) {
@@ -628,12 +617,11 @@ export const UserProvider = ({ children }) => {
           } else {
                // something went wrong when receiving data from Discovery API
                setExpoToken(false);
-               setAspenToken(false);
                setNotificationOnboard(0);
           }
 
           //maybe set allowNotifications at this point for initial load?
-          //logDebugMessage('updated notification settings in UserContext');
+          logDebugMessage('updated notification settings in UserContext');
      };
 
      const updateSeenNotificationOnboardPrompt = (data) => {
@@ -651,12 +639,8 @@ export const UserProvider = ({ children }) => {
           //logDebugMessage('updated expo token UserContext');
      };
 
-     const updateAspenToken = (data) => {
-          setAspenToken(data);
-          //logDebugMessage('updated aspen token UserContext');
-     };
-
      const updateUserDebugMessage = (data) => {
+          logDebugMessage(data);
           setUserDebugMessage(userDebugMessage => {
                const newArray = [data, ...userDebugMessage];
                if (newArray.length > 50) {
@@ -726,9 +710,7 @@ export const UserProvider = ({ children }) => {
                     notificationSettings,
                     updateNotificationSettings,
                     expoToken,
-                    aspenToken,
                     updateExpoToken,
-                    updateAspenToken,
                     userDebugMessage,
                     updateUserDebugMessage,
                     notificationOnboard,

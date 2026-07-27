@@ -29,12 +29,18 @@ export const MyAlternateLibraryCard = () => {
      const [card, setCard] = React.useState(user?.alternateLibraryCard ?? '');
      const [password, setPassword] = React.useState(user?.alternateLibraryCardPassword ?? '');
 
+     React.useEffect(() => {
+          setCard(user?.alternateLibraryCard ?? '');
+          setPassword(user?.alternateLibraryCardPassword ?? '');
+     }, [user]);
+
      const [isLoading, setIsLoading] = React.useState(false);
      const [showPassword, setShowPassword] = React.useState(false);
      const toggleShowPassword = () => setShowPassword(!showPassword);
 
      const handleGoBack = () => {
-          console.log(route?.params);
+          logDebugMessage("Handling go back");
+          logDebugMessage(route?.params);
           if (route?.params?.prevRoute === 'AccountDrawer') {
                navigation.dispatch(CommonActions.setParams({ prevRoute: null }));
                navigation.dispatch(StackActions.replace('LibraryCard'));
@@ -121,8 +127,6 @@ export const MyAlternateLibraryCard = () => {
                     getErrorMessage(data.code ?? 0, data.problem);
                }
           });
-          setCard('');
-          setPassword('');
      };
 
      return (
@@ -140,8 +144,8 @@ export const MyAlternateLibraryCard = () => {
                                              {cardLabel}
                                         </FormControlLabelText>
                                    </FormControlLabel>
-                                   <Input borderColor={colorMode === 'light' ? theme['colors']['coolGray']['500'] : theme['colors']['gray']['300']}>
-                                        <InputField textContentType="none" color={textColor} name="card" defaultValue={card} accessibilityLabel={cardLabel} onChangeText={(value) => setCard(value)} />
+                                   <Input borderColor={colorMode === 'light' ? "$coolGray500" : "$warmGray300"}>
+                                        <InputField textContentType="none" color={textColor} name="card" value={card} accessibilityLabel={cardLabel} onChangeText={(value) => setCard(value)} />
                                    </Input>
                               </FormControl>
                               {showAlternateLibraryCardPassword ? (
@@ -151,8 +155,8 @@ export const MyAlternateLibraryCard = () => {
                                                   {passwordLabel}
                                              </FormControlLabelText>
                                         </FormControlLabel>
-                                        <Input borderColor={colorMode === 'light' ? theme['colors']['coolGray']['500'] : theme['colors']['gray']['300']}>
-                                             <InputField textContentType="none" type={showPassword ? 'text' : 'password'} color={textColor} name="password" defaultValue={password} accessibilityLabel={passwordLabel} onChangeText={(value) => setPassword(value)} />
+                                        <Input borderColor={colorMode === 'light' ? "$coolGray500" : "$warmGray300"}>
+                                             <InputField textContentType="none" type={showPassword ? 'text' : 'password'} color={textColor} name="password" value={password} accessibilityLabel={passwordLabel} onChangeText={(value) => setPassword(value)} />
                                              <InputSlot onPress={toggleShowPassword}>
                                                   <InputIcon as={showPassword ? Eye : EyeOff} mr="$2" color={textColor} />
                                              </InputSlot>
@@ -161,24 +165,24 @@ export const MyAlternateLibraryCard = () => {
                               ) : null}
                               <ButtonGroup>
                                    <Button
-                                        bgColor={theme['colors']['primary']['500']}
+                                        bgColor={theme.tokens.colors.primary['500']}
                                         onPress={() => {
                                              setIsLoading(true);
                                              updateCard().then(() => {
                                                   setIsLoading(false);
                                              });
                                         }}>
-                                        <ButtonText color={theme['colors']['primary']['500-text']}>{getTermFromDictionary(language, 'update')}</ButtonText>
+                                        <ButtonText color={theme.tokens.colors.primary['500-text']}>{getTermFromDictionary(language, 'update')}</ButtonText>
                                    </Button>
                                    <Button
-                                        bgColor={theme['colors']['danger']['700']}
+                                        bgColor="$error700"
                                         onPress={() => {
                                              setIsLoading(true);
                                              deleteCard().then(() => {
                                                   setIsLoading(false);
                                              });
                                         }}>
-                                        <ButtonText color={theme['colors']['white']}>{getTermFromDictionary(language, 'delete')}</ButtonText>
+                                        <ButtonText color="$white">{getTermFromDictionary(language, 'delete')}</ButtonText>
                                    </Button>
                               </ButtonGroup>
                          </Box>

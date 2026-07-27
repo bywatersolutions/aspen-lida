@@ -1,6 +1,5 @@
 import React from 'react';
 import { ChevronRight, Dot } from 'lucide-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import _ from 'lodash';
 import { useNavigation } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -100,23 +99,23 @@ export const MyNotificationHistory = () => {
      const Paging = () => {
           if (data?.totalResults > 0) {
                return (
-                    <Box p="$2" bgColor={colorMode === 'light' ? theme['colors']['coolGray']['100'] : theme['colors']['coolGray']['700']} borderTopWidth={1} borderColor={colorMode === 'light' ? theme['colors']['coolGray']['200'] : theme['colors']['gray']['600']} flexWrap="nowrap" alignItems="center">
+                    <Box p="$2" bgColor={colorMode === 'light' ? "$coolGray100" : "$coolGray700"} borderTopWidth="$1" borderColor={colorMode === 'light' ? "$coolGray200" : "$warmGray600"} flexWrap="nowrap" alignItems="center">
                          <ScrollView horizontal>
                               <ButtonGroup>
-                                   <Button onPress={() => setPage(page - 1)} isDisabled={page === 1} size="sm" bgColor={theme['colors']['primary']['500']}>
-                                        <ButtonText color={theme['colors']['primary']['500-text']}>{getTermFromDictionary(language, 'previous')}</ButtonText>
+                                   <Button onPress={() => setPage(page - 1)} isDisabled={page === 1} size="sm" bgColor={theme.tokens.colors.primary['500']}>
+                                        <ButtonText color={theme.tokens.colors.primary['500-text']}>{getTermFromDictionary(language, 'previous')}</ButtonText>
                                    </Button>
                                    <Button
-                                        bgColor={theme['colors']['primary']['500']}
+                                        bgColor={theme.tokens.colors.primary['500']}
                                         onPress={() => {
                                              if (!isPreviousData && data.hasMore) {
-                                                  console.log('Adding to page');
+                                                  logDebugMessage('Adding to page');
                                                   setPage(page + 1);
                                              }
                                         }}
                                         isDisabled={isPreviousData || !data?.hasMore}
                                         size="sm">
-                                        <ButtonText color={theme['colors']['primary']['500-text']}>{getTermFromDictionary(language, 'next')}</ButtonText>
+                                        <ButtonText color={theme.tokens.colors.primary['500-text']}>{getTermFromDictionary(language, 'next')}</ButtonText>
                                    </Button>
                               </ButtonGroup>
                          </ScrollView>
@@ -136,7 +135,7 @@ export const MyNotificationHistory = () => {
      };
 
      return (
-          <SafeAreaView style={{ flex: 1 }}>
+          <Box style={{ flex: 1 }}>
                {_.size(systemMessagesForScreen) > 0 ? <Box safeArea="$2">{showSystemMessage()}</Box> : null}
                {status === 'loading' || isFetching ? (
                     loadingSpinner()
@@ -147,7 +146,7 @@ export const MyNotificationHistory = () => {
                          <FlatList data={inbox} ListEmptyComponent={Empty} ListFooterComponent={Paging} renderItem={({ item }) => <Item data={item} handleOpenMyMessage={handleOpenMyMessage} />} keyExtractor={(item, index) => index.toString()} contentContainerStyle={{ paddingBottom: 30 }} />
                     </>
                )}
-          </SafeAreaView>
+          </Box>
      );
 };
 
@@ -158,7 +157,7 @@ const Item = (data) => {
      let content = stripHTML(message.content);
      content = _.truncate(content, { length: 35 });
      return (
-          <Pressable onPress={() => handleOpenMyMessage(message)} borderBottomWidth="$1" borderColor={colorMode === 'light' ? theme['colors']['warmGray']['300'] : theme['colors']['coolGray']['500']} pl="$4" pr="$5" py="$2">
+          <Pressable onPress={() => handleOpenMyMessage(message)} borderBottomWidth="$1" borderColor={colorMode === 'light' ? "$warmGray300" : "$coolGray500"} pl="$4" pr="$5" py="$2">
                <HStack alignItems="start">
                     {message.isRead === '0' ? (
                          <Box width="7%">

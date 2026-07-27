@@ -1,11 +1,33 @@
 import { createApiClient } from './apiFactory';
 import { GLOBALS, PATRON } from '../globals';
 import { popAlert, popToast } from '../../components/loadError';
-import { getTermFromDictionary } from '../../translations/TranslationService';
-import { logDebugMessage, logErrorMessage, logWarnMessage } from '../logging.js';
+import { getTermFromDictionary } from '../../translations/TranslationHelper';
+import {logDebugMessage, logErrorMessage, logInfoMessage, logWarnMessage} from '../logging.js';
 import * as WebBrowser from 'expo-web-browser';
 import { problemCodeMap, stripHTML } from '../../helpers/helpers';
-import { resolveReactivationDate } from './userHelper';
+import { addDays, formatLocalDateYYYYMMDD, parseToDate } from '../../helpers/helpers';
+
+export function resolveReactivationDate(selectedReactivationDate, allowIndefinite = false) {
+     const today = formatLocalDateYYYYMMDD();
+
+     const selectedDate = parseToDate(selectedReactivationDate);
+     if (selectedDate) {
+          const selected = formatLocalDateYYYYMMDD(selectedDate);
+
+          if (selected === today) {
+               if (allowIndefinite) return null;
+               return formatLocalDateYYYYMMDD(addDays(new Date(), 30));
+          }
+
+          return selected;
+     }
+
+     if (!allowIndefinite) {
+          return formatLocalDateYYYYMMDD(addDays(new Date(), 30));
+     }
+
+     return null;
+}
 import * as Device from 'expo-device';
 
 function userClient(url = null, timeout = GLOBALS.timeoutAverage, language = 'en') {
@@ -60,9 +82,17 @@ export async function reloadProfile(url = null) {
      );
 
      if (response.ok) {
-          if (response.data?.result?.profile) return response.data.result.profile;
-          if (response.data?.result) return response.data.result;
+          if (response.data?.result?.profile) {
+               logDebugMessage("Returning profile");
+               return response.data.result.profile;
+          }
+          if (response.data?.result) {
+               logDebugMessage("Returning result");
+               return response.data.result;
+          }
           logWarnMessage('Reloading profile failed, did not get a result');
+     }else{
+          logWarnMessage('Reloading profile failed response was not ok');
      }
 
      return { success: false, errorFetching: true };
@@ -166,6 +196,7 @@ export async function getUserProfile(data, user, pass) {
           timeout: GLOBALS.timeoutAverage,
      });
 
+     logDebugMessage("Getting User Profile");
      const response = await client.post(
           '/UserAPI?method=getPatronProfile',
           {
@@ -409,6 +440,7 @@ export async function logoutUser(url = null) {
  * Passes the logged-in user to a Discovery page, validating the session and credentials before attempting to open the browser.
  * If the session is not valid, it will attempt to revalidate the user and session before opening the browser.
  * If the session cannot be validated, it will show an error message.
+ * @param {object} toast - The instance returned by useToast()
  * @param url
  * @param redirectTo
  * @param userId
@@ -418,7 +450,7 @@ export async function logoutUser(url = null) {
  * @param additionalParams
  * @returns {Promise<void>}
  */
-export async function passUserToDiscovery(url, redirectTo, userId, backgroundColor, textColor, id = null, additionalParams = null) {
+export async function passUserToDiscovery(toast, url, redirectTo, userId, backgroundColor, textColor, id = null, additionalParams = null) {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutAverage,
@@ -449,9 +481,9 @@ export async function passUserToDiscovery(url, redirectTo, userId, backgroundCol
                }
                await WebBrowser.openBrowserAsync(accessUrl, browserParams)
                     .then((res) => {
-                         console.log(res);
+                         logDebugMessage(res);
                          if (res.type === 'cancel' || res.type === 'dismiss') {
-                              console.log('User closed or dismissed window.');
+                              logDebugMessage('User closed or dismissed window.');
                               WebBrowser.dismissBrowser();
                               WebBrowser.coolDownAsync();
                          }
@@ -463,30 +495,30 @@ export async function passUserToDiscovery(url, redirectTo, userId, backgroundCol
                                    WebBrowser.coolDownAsync();
                                    await WebBrowser.openBrowserAsync(accessUrl, browserParams)
                                         .then((response) => {
-                                             console.log(response);
+                                             logDebugMessage(response);
                                              if (response.type === 'cancel') {
-                                                  console.log('User closed window.');
+                                                  logDebugMessage('User closed window.');
                                              }
                                         })
                                         .catch(async (error) => {
-                                             console.log('Unable to close previous browser session.');
+                                             logInfoMessage('Unable to close previous browser session.');
                                         });
                               } catch (error) {
-                                   console.log('Really borked.');
+                                   logErrorMessage('Really borked.');
                               }
                          } else {
-                              popToast(getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
-                              console.log(err);
+                              popToast(toast, getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
+                              logErrorMessage(err);
                          }
                     });
           } else {
                // unable to validate the user
-               popToast(getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
-               console.log('unable to validate user');
+               popToast(toast, getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
+               logErrorMessage('unable to validate user');
           }
      } else {
-          popToast(getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
-          console.log(response);
+          popToast(toast, getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
+          logErrorMessage(response);
      }
 }
 
@@ -534,6 +566,7 @@ export async function getPickupSublocations(url = null) {
 
 /**
  * Updates hold pickup preferences for the user
+ * @param {object} toast - The instance returned by useToast()
  * @param pickupLocationId
  * @param myLocation1Id
  * @param myLocation2Id
@@ -543,7 +576,7 @@ export async function getPickupSublocations(url = null) {
  * @param url
  * @returns {Promise<void>}
  */
-export async function updateHoldPickupPreferences(pickupLocationId = '', myLocation1Id = '', myLocation2Id = '', sublocation = '', rememberHoldPickupLocation = -1, language = 'en', url = null) {
+export async function updateHoldPickupPreferences(toast, pickupLocationId = '', myLocation1Id = '', myLocation2Id = '', sublocation = '', rememberHoldPickupLocation = -1, language = 'en', url = null) {
      const params = {
           ...(pickupLocationId && pickupLocationId !== -1 && pickupLocationId !== 0 && { pickupLocationId }),
           ...(myLocation1Id && myLocation1Id !== -1 && myLocation1Id !== 0 && { myLocation1Id }),
@@ -559,9 +592,9 @@ export async function updateHoldPickupPreferences(pickupLocationId = '', myLocat
 
      if (response.ok) {
           if (response.data?.error) {
-               popAlert('Error', response.data.error, 'error');
+               popAlert(toast, 'Error', response.data.error, 'error');
           } else {
-               popAlert(response.data?.result?.title, response.data?.result?.message, response.data?.result?.success === true ? 'success' : 'error');
+               popAlert(toast, response.data?.result?.title, response.data?.result?.message, response.data?.result?.success === true ? 'success' : 'error');
           }
      } else {
           logErrorMessage(response);
@@ -570,6 +603,7 @@ export async function updateHoldPickupPreferences(pickupLocationId = '', myLocat
 
 /**
  * Changes the pickup location for an existing hold
+ * @param {object} toast - The instance returned by useToast()
  * @param holdId
  * @param newLocation
  * @param newSublocation
@@ -578,7 +612,7 @@ export async function updateHoldPickupPreferences(pickupLocationId = '', myLocat
  * @param language
  * @returns {Promise<void>}
  */
-export async function changeHoldPickUpLocation(holdId, newLocation, newSublocation, url = null, userId, language = 'en') {
+export async function changeHoldPickUpLocation(toast, holdId, newLocation, newSublocation, url = null, userId, language = 'en') {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutFast,
@@ -597,7 +631,7 @@ export async function changeHoldPickUpLocation(holdId, newLocation, newSublocati
 
      if (response.ok && response.data?.result) {
           const result = response.data.result;
-          popAlert(result.title, result.message, result.success === true ? 'success' : 'error');
+          popAlert(toast, result.title, result.message, result.success === true ? 'success' : 'error');
      }
 }
 
@@ -637,6 +671,7 @@ export async function getPatronHolds(readySort = 'expire', pendingSort = 'sortTi
  * Freezes a hold for a given hold ID and record, with an optional reactivation date.
  * If no reactivation date is provided, it will default to 30 days from the current date
  * unless allowIndefinite is true,in which case it will freeze indefinitely until the user thaws it.
+ * @param {object} toast - The instance returned by useToast()
  * @param cancelId
  * @param recordId
  * @param source
@@ -647,7 +682,7 @@ export async function getPatronHolds(readySort = 'expire', pendingSort = 'sortTi
  * @param allowIndefinite
  * @returns {Promise<void>}
  */
-export async function freezeHold(cancelId, recordId, source, url = null, patronId, selectedReactivationDate = null, language = 'en', allowIndefinite = false) {
+export async function freezeHold(toast, cancelId, recordId, source, url = null, patronId, selectedReactivationDate = null, language = 'en', allowIndefinite = false) {
      const reactivationDate = resolveReactivationDate(selectedReactivationDate, allowIndefinite);
 
      const client = createApiClient({
@@ -668,15 +703,18 @@ export async function freezeHold(cancelId, recordId, source, url = null, patronI
      if (response.ok && response.data?.result) {
           const result = response.data.result;
           if (result.success === true) {
-               popAlert(result.title ?? getTermFromDictionary(language, 'hold_frozen'), result.message, 'success');
+               popAlert(toast, result.title ?? getTermFromDictionary(language, 'hold_frozen'), result.message, 'success');
           } else {
-               popAlert(result.title ?? getTermFromDictionary(language, 'unable_freeze_hold'), result.message, 'error');
+               popAlert(toast,result.title ?? getTermFromDictionary(language, 'unable_freeze_hold'), result.message, 'error');
           }
+     }else{
+          popAlert(toast,'Error', 'Unknown error freezing hold', 'error');
      }
 }
 
 /**
  * Freezes multiple holds based on the given data array
+ * @param {object} toast - The instance returned by useToast()
  * @param data
  * @param url
  * @param selectedReactivationDate
@@ -684,7 +722,7 @@ export async function freezeHold(cancelId, recordId, source, url = null, patronI
  * @param allowIndefinite
  * @returns {Promise<void>}
  */
-export async function freezeHolds(data, url = null, selectedReactivationDate = null, language = 'en', allowIndefinite = false) {
+export async function freezeHolds(toast, data, url = null, selectedReactivationDate = null, language = 'en', allowIndefinite = false) {
      const reactivationDate = resolveReactivationDate(selectedReactivationDate, allowIndefinite);
 
      let numSuccess = 0;
@@ -731,11 +769,12 @@ export async function freezeHolds(data, url = null, selectedReactivationDate = n
           }
      }
 
-     popAlert(title, message, status);
+     popAlert(toast, title, message, status);
 }
 
 /**
  * Thaws a hold for a given hold ID and record, making it active again.
+ * @param {object} toast - The instance returned by useToast()
  * @param cancelId
  * @param recordId
  * @param source
@@ -744,7 +783,7 @@ export async function freezeHolds(data, url = null, selectedReactivationDate = n
  * @param language
  * @returns {Promise<void>}
  */
-export async function thawHold(cancelId, recordId, source, url = null, patronId, language = 'en') {
+export async function thawHold(toast, cancelId, recordId, source, url = null, patronId, language = 'en') {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutAverage,
@@ -762,21 +801,22 @@ export async function thawHold(cancelId, recordId, source, url = null, patronId,
      if (response.ok && response.data?.result) {
           const result = response.data.result;
           if (result.success === true) {
-               popAlert(result.title ?? getTermFromDictionary(language, 'hold_thawed'), result.message, 'success');
+               popAlert(toast, result.title ?? getTermFromDictionary(language, 'hold_thawed'), result.message, 'success');
           } else {
-               popAlert(result.title ?? getTermFromDictionary(language, 'unable_thaw_hold'), result.message, 'error');
+               popAlert(toast, result.title ?? getTermFromDictionary(language, 'unable_thaw_hold'), result.message, 'error');
           }
      }
 }
 
 /**
  * Thaws multiple holds based on the given data array
+ * @param {object} toast - The instance returned by useToast()
  * @param data
  * @param url
  * @param language
  * @returns {Promise<void>}
  */
-export async function thawHolds(data, url = null, language = 'en') {
+export async function thawHolds(toast, data, url = null, language = 'en') {
      let numSuccess = 0;
      let numFailed = 0;
 
@@ -812,15 +852,16 @@ export async function thawHolds(data, url = null, language = 'en') {
      }
 
      if (numFailed > 0) {
-          status = 'warning';
+          status = 'error';
           message += ` Unable to thaw ${numFailed} holds.`;
      }
 
-     popAlert(getTermFromDictionary(language, 'holds_thawed'), message, status);
+     popAlert(toast, getTermFromDictionary(language, 'holds_thawed'), message, status);
 }
 
 /**
  * Cancels a hold for a given hold ID and record, removing it from the user's holds.
+ * @param {object} toast - The instance returned by useToast()
  * @param cancelId
  * @param recordId
  * @param source
@@ -829,7 +870,7 @@ export async function thawHolds(data, url = null, language = 'en') {
  * @param language
  * @returns {Promise<void>}
  */
-export async function cancelHold(cancelId, recordId, source, url = null, patronId, language = 'en') {
+export async function cancelHold(toast, cancelId, recordId, source, url = null, patronId, language = 'en') {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutFast,
@@ -847,21 +888,22 @@ export async function cancelHold(cancelId, recordId, source, url = null, patronI
      if (response.ok && response.data?.result) {
           const result = response.data.result;
           if (result.success === true) {
-               popAlert(result.title, result.message, 'success');
+               popAlert(toast, result.title, result.message, 'success');
           } else {
-               popAlert(result.title, result.message, 'error');
+               popAlert(toast, result.title, result.message, 'error');
           }
      }
 }
 
 /**
  * Cancels multiple holds based on the given data array
+ * @param {object} toast - The instance returned by useToast()
  * @param data
  * @param url
  * @param language
  * @returns {Promise<void>}
  */
-export async function cancelHolds(data, url = null, language = 'en') {
+export async function cancelHolds(toast, data, url = null, language = 'en') {
      let numSuccess = 0;
      let numFailed = 0;
 
@@ -897,11 +939,11 @@ export async function cancelHolds(data, url = null, language = 'en') {
      }
 
      if (numFailed > 0) {
-          status = 'warning';
+          status = 'error';
           message += ` Unable to cancel ${numFailed} holds.`;
      }
 
-     popAlert(getTermFromDictionary(language, 'holds_cancelled'), message, status);
+     popAlert(toast, getTermFromDictionary(language, 'holds_cancelled'), message, status);
 }
 
 /**
@@ -1049,6 +1091,7 @@ export async function confirmHold(recordId, confirmationId, language = 'en', url
 /**
  * Renews a checkout for the patron
  * Includes support for ILS renewals that may require confirmation of renewal fees before proceeding.
+ * @param {object} toast - The instance returned by useToast()
  * @param barcode
  * @param recordId
  * @param source
@@ -1058,7 +1101,7 @@ export async function confirmHold(recordId, confirmationId, language = 'en', url
  * @param language
  * @returns {Promise<{}|{confirmRenewalFee}|*>}
  */
-export async function renewCheckout(barcode, recordId, source, itemId, libraryUrl = null, userId, language = 'en') {
+export async function renewCheckout(toast, barcode, recordId, source, itemId, libraryUrl = null, userId, language = 'en') {
      const validId = itemId ?? barcode;
 
      const client = createApiClient({
@@ -1081,9 +1124,9 @@ export async function renewCheckout(barcode, recordId, source, itemId, libraryUr
                if (result.confirmRenewalFee) {
                     return result;
                }
-               popAlert(result.title, stripHTML(result.message), result.success === true ? 'success' : 'error');
+               popAlert(toast, result.title, stripHTML(result.message), result.success === true ? 'success' : 'error');
           } else {
-               popAlert(result.title, stripHTML(result.message), result.success === true ? 'success' : 'error');
+               popAlert(toast, result.title, stripHTML(result.message), result.success === true ? 'success' : 'error');
           }
 
           return result;
@@ -1094,6 +1137,7 @@ export async function renewCheckout(barcode, recordId, source, itemId, libraryUr
 
 /**
  * Confirms a renewal that may have a fee associated with it in the ILS
+ * @param {object} toast - The instance returned by useToast()
  * @param barcode
  * @param recordId
  * @param source
@@ -1103,7 +1147,7 @@ export async function renewCheckout(barcode, recordId, source, itemId, libraryUr
  * @param language
  * @returns {Promise<{}|{confirmRenewalFee}|*>}
  */
-export async function confirmRenewCheckout(barcode, recordId, source, itemId, libraryUrl = null, userId, language = 'en') {
+export async function confirmRenewCheckout(toast, barcode, recordId, source, itemId, libraryUrl = null, userId, language = 'en') {
      const validId = itemId ?? barcode;
 
      const client = createApiClient({
@@ -1127,9 +1171,9 @@ export async function confirmRenewCheckout(barcode, recordId, source, itemId, li
                if (result.confirmRenewalFee) {
                     return result;
                }
-               popAlert(result.title, result.message, result.success === true ? 'success' : 'error');
+               popAlert(toast, result.title, result.message, result.success === true ? 'success' : 'error');
           } else {
-               popAlert(result.title, result.message, result.success === true ? 'success' : 'error');
+               popAlert(toast, result.title, result.message, result.success === true ? 'success' : 'error');
           }
 
           return result;
@@ -1141,11 +1185,12 @@ export async function confirmRenewCheckout(barcode, recordId, source, itemId, li
 /**
  * Renews all checkouts for the patron
  * Includes support for ILS renewals that may require confirmation of renewal fees before proceeding.
+ * @param {object} toast - The instance returned by useToast()
  * @param url
  * @param language
  * @returns {Promise<{}|{confirmRenewalFee}|*>}
  */
-export async function renewAllCheckouts(url = null, language = 'en') {
+export async function renewAllCheckouts(toast, url = null, language = 'en') {
      const client = userClient(url, GLOBALS.timeoutAverage, language);
      const response = await client.post('/UserAPI?method=renewAll', {});
 
@@ -1156,7 +1201,7 @@ export async function renewAllCheckouts(url = null, language = 'en') {
                return result;
           }
 
-          popAlert(result.title, result.renewalMessage?.[0] ?? '', result.success === true ? 'success' : 'error');
+          popAlert(toast, result.title, result.renewalMessage?.[0] ?? '', result.success === true ? 'success' : 'error');
           return result;
      }
 
@@ -1165,11 +1210,12 @@ export async function renewAllCheckouts(url = null, language = 'en') {
 
 /**
  * Confirms renewal of all checkouts that may have fees associated with them in the ILS
+ * @param {object} toast - The instance returned by useToast()
  * @param url
  * @param language
  * @returns {Promise<{}|{confirmRenewalFee}|*>}
  */
-export async function confirmRenewAllCheckouts(url = null, language = 'en') {
+export async function confirmRenewAllCheckouts(toast, url = null, language = 'en') {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutAverage,
@@ -1187,7 +1233,7 @@ export async function confirmRenewAllCheckouts(url = null, language = 'en') {
                return result;
           }
 
-          popAlert(result.title, result.renewalMessage?.[0] ?? '', result.success === true ? 'success' : 'error');
+          popAlert(toast, result.title, result.renewalMessage?.[0] ?? '', result.success === true ? 'success' : 'error');
           return result;
      }
 
@@ -1196,6 +1242,7 @@ export async function confirmRenewAllCheckouts(url = null, language = 'en') {
 
 /**
  * Returns a checkout for the patron
+ * @param {object} toast - The instance returned by useToast()
  * @param userId
  * @param id
  * @param source
@@ -1206,7 +1253,7 @@ export async function confirmRenewAllCheckouts(url = null, language = 'en') {
  * @param language
  * @returns {Promise<void>}
  */
-export async function returnCheckout(userId, id, source, overDriveId = null, url = null, version, axis360Id = null, language = 'en') {
+export async function returnCheckout(toast, userId, id, source, overDriveId = null, url = null, version, axis360Id = null, language = 'en') {
      let itemId = id;
      if (overDriveId != null) {
           itemId = overDriveId;
@@ -1227,7 +1274,7 @@ export async function returnCheckout(userId, id, source, overDriveId = null, url
 
      if (response.ok && response.data?.result) {
           const result = response.data.result;
-          popAlert(result.title, result.message, result.success === true ? 'success' : 'error');
+          popAlert(toast, result.title, result.message, result.success === true ? 'success' : 'error');
      }
 }
 
@@ -1309,13 +1356,14 @@ export async function getViewerAccounts(url = null, language = 'en') {
 
 /**
  * Add an account that the user wants to create a link to
+ * @param {object} toast - The instance returned by useToast()
  * @param username
  * @param password
  * @param url
  * @param language
  * @returns {Promise<boolean>}
  */
-export async function addLinkedAccount(username = '', password = '', url = null, language = 'en') {
+export async function addLinkedAccount(toast, username = '', password = '', url = null, language = 'en') {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutFast,
@@ -1329,7 +1377,7 @@ export async function addLinkedAccount(username = '', password = '', url = null,
 
      if (response.ok && response.data?.result?.success !== undefined) {
           const success = response.data.result.success === true;
-          popAlert(response.data.result.title, response.data.result.message, success ? 'success' : 'error');
+          popAlert(toast, response.data.result.title, response.data.result.message, success ? 'success' : 'error');
           return success;
      }
 
@@ -1338,12 +1386,13 @@ export async function addLinkedAccount(username = '', password = '', url = null,
 
 /**
  * Remove an account that the user has created a link to
+ * @param {object} toast - The instance returned by useToast()
  * @param patronToRemove
  * @param url
  * @param language
  * @returns {Promise<boolean>}
  */
-export async function removeLinkedAccount(patronToRemove, url = null, language = 'en') {
+export async function removeLinkedAccount(toast, patronToRemove, url = null, language = 'en') {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutFast,
@@ -1363,7 +1412,7 @@ export async function removeLinkedAccount(patronToRemove, url = null, language =
 
      if (response.ok && response.data?.result?.success !== undefined) {
           const success = response.data.result.success === true;
-          popAlert(response.data.result.title, response.data.result.message, success ? 'success' : 'error');
+          popAlert(toast, response.data.result.title, response.data.result.message, success ? 'success' : 'error');
           return success;
      }
 
@@ -1372,12 +1421,13 @@ export async function removeLinkedAccount(patronToRemove, url = null, language =
 
 /**
  * Remove an account that another user has created a link to
+ * @param {object} toast - The instance returned by useToast()
  * @param patronToRemove
  * @param url
  * @param language
  * @returns {Promise<boolean>}
  */
-export async function removeViewerAccount(patronToRemove, url = null, language = 'en') {
+export async function removeViewerAccount(toast, patronToRemove, url = null, language = 'en') {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutFast,
@@ -1397,7 +1447,7 @@ export async function removeViewerAccount(patronToRemove, url = null, language =
 
      if (response.ok && response.data?.result?.success !== undefined) {
           const success = response.data.result.success === true;
-          popAlert(response.data.result.title, response.data.result.message, success ? 'success' : 'error');
+          popAlert(toast, response.data.result.title, response.data.result.message, success ? 'success' : 'error');
           return success;
      }
 
@@ -1406,11 +1456,12 @@ export async function removeViewerAccount(patronToRemove, url = null, language =
 
 /**
  * Disables a users ability to use linked accounts
+ * @param {object} toast - The instance returned by useToast()
  * @param language
  * @param url
  * @returns {Promise<boolean>}
  */
-export async function disableAccountLinking(language = 'en', url = null) {
+export async function disableAccountLinking(toast, language = 'en', url = null) {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutFast,
@@ -1421,7 +1472,7 @@ export async function disableAccountLinking(language = 'en', url = null) {
 
      if (response.ok && response.data?.result?.success !== undefined) {
           const success = response.data.result.success === true;
-          popAlert(response.data.result.title, response.data.result.message, success ? 'success' : 'error');
+          popAlert(toast, response.data.result.title, response.data.result.message, success ? 'success' : 'error');
           return success;
      }
 
@@ -1430,11 +1481,12 @@ export async function disableAccountLinking(language = 'en', url = null) {
 
 /**
  * Enables a users ability to use linked accounts if they have previously disabled it
+ * @param {object} toast - The instance returned by useToast()
  * @param language
  * @param url
  * @returns {Promise<boolean>}
  */
-export async function enableAccountLinking(language = 'en', url = null) {
+export async function enableAccountLinking(toast, language = 'en', url = null) {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutFast,
@@ -1445,7 +1497,7 @@ export async function enableAccountLinking(language = 'en', url = null) {
 
      if (response.ok && response.data?.result?.success !== undefined) {
           const success = response.data.result.success === true;
-          popAlert(response.data.result.title, response.data.result.message, success ? 'success' : 'error');
+          popAlert(toast, response.data.result.title, response.data.result.message, success ? 'success' : 'error');
           return success;
      }
 
@@ -1722,81 +1774,42 @@ export async function markMessageAsUnread(id, url = null, language = 'en') {
 }
 
 /**
- * Fetch the user's notification preferences
- * @param libraryUrl
- * @param pushToken
- * @returns {Promise<*|boolean>}
- */
-export async function getNotificationPreferences(libraryUrl, pushToken) {
-     const client = createApiClient({
-          url: libraryUrl,
-          timeout: GLOBALS.timeoutAverage,
-     });
-
-     logDebugMessage('Loading notification preferences ' + pushToken);
-     const response = await client.post('/UserAPI?method=getNotificationPreferences', {
-          pushToken,
-     });
-
-     if (response.ok) {
-          try {
-               await createChannelsAndCategories();
-          } catch (e) {
-               logErrorMessage('Could not create channels and categories');
-               logErrorMessage(e);
-          }
-          return response.data?.result ?? false;
-     } else {
-          const problem = problemCodeMap(response.problem);
-          popToast(problem.title, problem.message, 'error');
-          logWarnMessage('Could not retrieve notification preferences');
-          logWarnMessage(response);
-          return false;
-     }
-}
-
-/**
  * Fetch the user's notification preference for a specific type of notification
+ * @param {object} toast - The instance returned by useToast()
  * @param url
  * @param pushToken
- * @param type
  * @returns {Promise<*|boolean>}
  */
-export async function getNotificationPreference(url, pushToken, type) {
+export async function getNotificationPreferences(toast, url, pushToken) {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutAverage,
      });
 
-     logDebugMessage('Getting notification preference for type ' + type);
+     logDebugMessage('Getting notification preferences');
      const response = await client.post(
-          '/UserAPI?method=getNotificationPreference',
+          '/UserAPI?method=getNotificationPreferences',
           {
                pushToken,
-               type,
           },
-          {
-               params: { type },
-          }
      );
-
      if (response.ok) {
           if (response.data?.result?.success === true) {
-               logDebugMessage(response.data.result);
                return response.data.result;
           } else {
-               popAlert(response.data?.result?.title ?? 'Unknown Error', response.data?.result?.message, 'error');
+               popAlert(toast, response.data?.result?.title ?? 'Unknown Error', response.data?.result?.message, 'error');
                return false;
           }
      } else {
           const problem = problemCodeMap(response.problem);
-          popToast(problem.title, problem.message, 'error');
+          popToast(toast, problem.title, problem.message, 'error');
           return false;
      }
 }
 
 /**
  * Update the user's notification preferences for a specific type of notification
+ * @param {object} toast - The instance returned by useToast()
  * @param url
  * @param pushToken
  * @param type
@@ -1804,12 +1817,13 @@ export async function getNotificationPreference(url, pushToken, type) {
  * @param showToast
  * @returns {Promise<boolean>}
  */
-export async function setNotificationPreference(url, pushToken, type, value, showToast = true) {
+export async function setNotificationPreference(toast, url, pushToken, type, value, showToast = true) {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutAverage,
      });
 
+     logDebugMessage("Setting Notification Preference for " + type + " to " + value + " (push token is " + pushToken + ")");
      const response = await client.post(
           '/UserAPI?method=setNotificationPreference',
           {
@@ -1821,6 +1835,21 @@ export async function setNotificationPreference(url, pushToken, type, value, sho
                params: { type, value },
           }
      );
+     logDebugMessage(response);
+     if (response.ok) {
+          if (response.data.result.success) {
+               return true;
+          }else{
+               if (showToast) {
+                    popAlert(toast, response.data.result.title, response.data.result.message, 'error');
+               }
+          }
+     }else{
+          if (showToast) {
+               popAlert(toast, 'Error', 'Could not save notification preference', 'error');
+          }
+          return false;
+     }
 
      return response.ok;
 }
@@ -2208,6 +2237,7 @@ export async function addActivityProgress(activityId, linkedUserId, activityType
 
 /**
  * Access a sample of an OverDrive title
+ * @param {object} toast - The instance returned by useToast()
  * @param url
  * @param formatId
  * @param itemId
@@ -2215,7 +2245,7 @@ export async function addActivityProgress(activityId, linkedUserId, activityType
  * @param language
  * @returns {Promise<void>}
  */
-export async function overDriveSample(url = null, formatId, itemId, sampleNumber, language = 'en') {
+export async function overDriveSample(toast, url = null, formatId, itemId, sampleNumber, language = 'en') {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutAverage,
@@ -2255,7 +2285,7 @@ export async function overDriveSample(url = null, formatId, itemId, sampleNumber
                               logErrorMessage(error);
                          }
                     } else {
-                         popToast(getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
+                         popToast(toast, getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
                     }
                });
      }
@@ -2263,6 +2293,7 @@ export async function overDriveSample(url = null, formatId, itemId, sampleNumber
 
 /**
  * Access an online item
+ * @param {object} toast - The instance returned by useToast()
  * @param userId
  * @param id
  * @param source
@@ -2271,7 +2302,7 @@ export async function overDriveSample(url = null, formatId, itemId, sampleNumber
  * @param language
  * @returns {Promise<void>}
  */
-export async function viewOnlineItem(userId, id, source, accessOnlineUrl, url = null, language = 'en') {
+export async function viewOnlineItem(toast, userId, id, source, accessOnlineUrl, url = null, language = 'en') {
      if (source === 'hoopla' || source === 'cloud_library') {
           const client = createApiClient({
                url,
@@ -2301,13 +2332,13 @@ export async function viewOnlineItem(userId, id, source, accessOnlineUrl, url = 
                                              logDebugMessage(response);
                                         })
                                         .catch(async (error) => {
-                                             popToast(getTermFromDictionary(language, 'error_no_open_resource'), getTermFromDictionary(language, 'error_device_block_browser'), 'error');
+                                             popToast(toast, getTermFromDictionary(language, 'error_no_open_resource'), getTermFromDictionary(language, 'error_device_block_browser'), 'error');
                                         });
                               } catch (error) {
                                    logDebugMessage('Really borked.');
                               }
                          } else {
-                              popToast(getTermFromDictionary(language, 'error_no_open_resource'), getTermFromDictionary(language, 'error_device_block_browser'), 'error');
+                              popToast(toast, getTermFromDictionary(language, 'error_no_open_resource'), getTermFromDictionary(language, 'error_device_block_browser'), 'error');
                          }
                     });
           }
@@ -2326,14 +2357,14 @@ export async function viewOnlineItem(userId, id, source, accessOnlineUrl, url = 
                                    })
                                    .catch((error) => {
                                         logErrorMessage(error);
-                                        popToast(getTermFromDictionary(language, 'error_no_open_resource'), getTermFromDictionary(language, 'error_device_block_browser'), 'error');
+                                        popToast(toast, getTermFromDictionary(language, 'error_no_open_resource'), getTermFromDictionary(language, 'error_device_block_browser'), 'error');
                                    });
                          } catch (error) {
                               logErrorMessage(error);
                               logErrorMessage('Unable to open.');
                          }
                     } else {
-                         popToast(getTermFromDictionary(language, 'error_no_open_resource'), getTermFromDictionary(language, 'error_device_block_browser'), 'error');
+                         popToast(toast, getTermFromDictionary(language, 'error_no_open_resource'), getTermFromDictionary(language, 'error_device_block_browser'), 'error');
                     }
                });
      }
@@ -2341,6 +2372,7 @@ export async function viewOnlineItem(userId, id, source, accessOnlineUrl, url = 
 
 /**
  * Access an OverDrive item
+ * @param {object} toast - The instance returned by useToast()
  * @param userId
  * @param formatId
  * @param overDriveId
@@ -2348,7 +2380,7 @@ export async function viewOnlineItem(userId, id, source, accessOnlineUrl, url = 
  * @param language
  * @returns {Promise<void>}
  */
-export async function viewOverDriveItem(userId, formatId, overDriveId, url = null, language = 'en') {
+export async function viewOverDriveItem(toast, userId, formatId, overDriveId, url = null, language = 'en') {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutFast,
@@ -2386,89 +2418,20 @@ export async function viewOverDriveItem(userId, formatId, overDriveId, url = nul
                               logErrorMessage(error);
                          }
                     } else {
-                         popToast(getTermFromDictionary(language, 'error_no_open_resource'), getTermFromDictionary(language, 'error_device_block_browser'), 'error');
+                         popToast(toast, getTermFromDictionary(language, 'error_no_open_resource'), getTermFromDictionary(language, 'error_device_block_browser'), 'error');
                     }
                });
      }
 }
 
-/** *******************************************************************
- * ILL Requests
- ******************************************************************* **/
-/**
- * Submit a VDX ILL request
- * @param url
- * @param request
- * @returns {Promise<{}|*>}
- */
-export async function submitVdxRequest(url = null, request) {
-     const client = createApiClient({
-          url,
-          timeout: GLOBALS.timeoutAverage,
-     });
-
-     const response = await client.post('/UserAPI?method=submitVdxRequest', {
-          title: request.title,
-          author: request.author,
-          publisher: request.publisher,
-          isbn: request.isbn,
-          maximumFeeAmount: request.maximumFeeAmount,
-          acceptFee: request.acceptFee,
-          pickupLocation: request.pickupLocation,
-          catalogKey: request.catalogKey,
-          oclcNumber: request.oclcNumber,
-          note: request.note,
-     });
-
-     if (response.ok) {
-          if (response.data?.result?.success === true) {
-               popAlert(response.data.result.title, response.data.result.message, 'success');
-               return response.data.result;
-          } else {
-               popAlert(response.data?.title ?? 'Unknown Error', response.data?.message, 'error');
-               return response.data;
-          }
-     }
-
-     return {};
-}
-
-/**
- * Cancel a VDX ILL request
- * @param libraryUrl
- * @param sourceId
- * @param cancelId
- * @param language
- * @returns {Promise<void>}
- */
-export async function cancelVdxRequest(libraryUrl = null, sourceId, cancelId, language = 'en') {
-     const client = createApiClient({
-          url: libraryUrl,
-          timeout: GLOBALS.timeoutAverage,
-          language,
-     });
-
-     const response = await client.post('/UserAPI?method=cancelVdxRequest', {
-          sourceId,
-          cancelId,
-     });
-
-     if (response.ok) {
-          if (response.data?.result?.success === 'true') {
-               popAlert(response.data.result.title, response.data.result.message, 'success');
-          } else {
-               popAlert(getTermFromDictionary(language, 'error'), response.data?.result?.message, 'error');
-          }
-     }
-}
-
 /**
  * Submit a Local ILL request
+ * @param {object} toast - The instance returned by useToast()
  * @param url
  * @param request
  * @returns {Promise<{}|*>}
  */
-export async function submitLocalIllRequest(url = null, request) {
+export async function submitLocalIllRequest(toast, url = null, request) {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutAverage,
@@ -2486,10 +2449,10 @@ export async function submitLocalIllRequest(url = null, request) {
 
      if (response.ok) {
           if (response.data?.result?.success === true) {
-               popAlert(response.data.result.title, response.data.result.message, 'success');
+               popAlert(toast, response.data.result.title, response.data.result.message, 'success');
                return response.data.result;
           } else {
-               popAlert(response.data?.title ?? 'Unknown Error', response.data?.result?.message, 'error');
+               popAlert(toast, response.data?.title ?? 'Unknown Error', response.data?.result?.message, 'error');
                return response.data.result;
           }
      }
@@ -2499,11 +2462,12 @@ export async function submitLocalIllRequest(url = null, request) {
 
 /**
  * Submit a Local ILL request via email
+ * @param {object} toast - The instance returned by useToast()
  * @param url
  * @param request
  * @returns {Promise<{}|*>}
  */
-export async function submitLocalIllRequestEmail(url = null, request) {
+export async function submitLocalIllRequestEmail(toast, url = null, request) {
      const client = createApiClient({
           url,
           timeout: GLOBALS.timeoutAverage,
@@ -2521,14 +2485,14 @@ export async function submitLocalIllRequestEmail(url = null, request) {
 
      if (response.ok) {
           if (response.data?.error) {
-               popAlert('Unexpected Error', response.data.error, 'error');
+               popAlert(toast, 'Unexpected Error', response.data.error, 'error');
                return response.data.result;
           } else {
                if (response.data?.result?.success === true) {
-                    popAlert(response.data.result.api.title, response.data.result.api.message, 'success');
+                    popAlert(toast, response.data.result.api.title, response.data.result.api.message, 'success');
                     return response.data.result;
                } else {
-                    popAlert(response.data?.api?.title ?? 'Unknown Error', response.data?.result?.api?.message, 'error');
+                    popAlert(toast, response.data?.api?.title ?? 'Unknown Error', response.data?.result?.api?.message, 'error');
                     return response.data.result;
                }
           }

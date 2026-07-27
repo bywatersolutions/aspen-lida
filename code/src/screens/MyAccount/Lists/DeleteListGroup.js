@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { LanguageContext, LibrarySystemContext, ThemeContext, UserContext } from '../../../context/initialContext';
-import { Center, Button, ButtonIcon, ButtonText, ButtonGroup, Modal, ModalBackdrop, ModalContent, ModalHeader, ModalBody, ModalFooter, Heading, ModalCloseButton, Icon, CloseIcon, Text } from '@gluestack-ui/themed';
+import { Center, Button, ButtonIcon, ButtonText, ButtonGroup, Modal, ModalBackdrop, ModalContent, ModalHeader, ModalBody, ModalFooter, Heading, ModalCloseButton, Icon, CloseIcon, Text, useToast } from '@gluestack-ui/themed';
 import { MaterialIcons } from '@expo/vector-icons';
 import { getTermFromDictionary } from '../../../translations/TranslationService';
 import { deleteListGroup } from '../../../util/api/list';
@@ -16,6 +16,7 @@ export const DeleteListGroup = ({id, handleUpdate, setCurrentListGroup}) => {
      const { textColor, theme, colorMode } = React.useContext(ThemeContext);
      const [showModal, setShowModal] = React.useState(false);
      const [loading, setLoading] = React.useState(false);
+     const toast = useToast();
 
      const toggle = () => {
           setShowModal(!showModal);
@@ -23,16 +24,16 @@ export const DeleteListGroup = ({id, handleUpdate, setCurrentListGroup}) => {
 
      return (
           <Center>
-               <Button onPress={toggle} size="xs" bgColor={theme['colors']['danger']['500']}>
-                    <ButtonIcon color={theme['colors']['white']} as={MaterialIcons} name="delete" mr="$1" />
-                    <ButtonText color={theme['colors']['white']}>{getTermFromDictionary(language, 'delete_list_group')}</ButtonText>
+               <Button onPress={toggle} size="xs" bgColor="$error500">
+                    <ButtonIcon color="$white" as={MaterialIcons} name="delete" mr="$1" />
+                    <ButtonText color="$white">{getTermFromDictionary(language, 'delete_list_group')}</ButtonText>
                </Button>
                <Modal isOpen={showModal} onClose={toggle} size="full" avoidKeyboard>
                     <ModalBackdrop />
-                    <ModalContent maxWidth="90%"  bgColor={colorMode === 'light' ? theme['colors']['warmGray']['50'] : theme['colors']['coolGray']['700']}>
+                    <ModalContent maxWidth="90%"  bgColor={colorMode === 'light' ? "$warmGray50" : "$coolGray700"}>
                          <ModalHeader>
                               <Heading size="md" color={textColor}>{getTermFromDictionary(language, 'delete_list_group')}</Heading>
-                              <ModalCloseButton hitSlop={{ top: 30, bottom: 30, left: 30, right: 30 }}>
+                              <ModalCloseButton p="$3" onPress={toggle}>
                                    <Icon as={CloseIcon} color={textColor} />
                               </ModalCloseButton>
                          </ModalHeader>
@@ -41,10 +42,10 @@ export const DeleteListGroup = ({id, handleUpdate, setCurrentListGroup}) => {
                          </ModalBody>
                          <ModalFooter>
                               <ButtonGroup>
-                                   <Button variant="outline" onPress={toggle} borderColor={theme['colors']['primary']['500']}>
-                                        <ButtonText color={theme['colors']['primary']['500']}>{getTermFromDictionary(language, 'cancel')}</ButtonText>
+                                   <Button variant="outline" onPress={toggle} borderColor={theme.tokens.colors.primary['500']}>
+                                        <ButtonText color={theme.tokens.colors.primary['500']}>{getTermFromDictionary(language, 'cancel')}</ButtonText>
                                    </Button>
-                                   <Button bgColor={theme['colors']['danger']['500']}
+                                   <Button bgColor="$error500"
                                            isLoading={loading}
                                            isLoadingText={getTermFromDictionary(language, 'deleting', true)}
                                            onPress={() => {
@@ -59,9 +60,9 @@ export const DeleteListGroup = ({id, handleUpdate, setCurrentListGroup}) => {
                                                      setShowModal(false);
                                                      if (res.data.result.success === false) {
                                                           status = 'error';
-                                                          popAlert(res.data.result.title, res.data.result.message, status);
+                                                          popAlert(toast, res.data.result.title, res.data.result.message, status);
                                                      } else {
-                                                          popAlert(res.data.result.title, res.data.result.message, status);
+                                                          popAlert(toast, res.data.result.title, res.data.result.message, status);
                                                           navigateStack('AccountScreenTab', 'MyLists', {
                                                                libraryUrl: library.baseUrl,
                                                                hasPendingChanges: true,
@@ -70,7 +71,7 @@ export const DeleteListGroup = ({id, handleUpdate, setCurrentListGroup}) => {
                                                 });
                                            }}
                                    >
-                                        <ButtonText color={theme['colors']['white']}>{getTermFromDictionary(language, 'delete')}</ButtonText>
+                                        <ButtonText color="$white">{getTermFromDictionary(language, 'delete')}</ButtonText>
                                    </Button>
                               </ButtonGroup>
                          </ModalFooter>

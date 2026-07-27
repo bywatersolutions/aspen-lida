@@ -1,7 +1,7 @@
-import { Button, ButtonText } from '@gluestack-ui/themed';
-import React from 'react';
-import {useColorModeValue, useToken} from 'native-base';
+import {Button, ButtonText, useToast, useToken} from '@gluestack-ui/themed';
+import { useColorModeValue } from '../../themes/theme';
 import { LibrarySystemContext, UserContext, ThemeContext } from '../../context/initialContext';
+import React from 'react';
 
 // custom components and helper files
 import {passUserToDiscovery} from '../../util/api/user';
@@ -10,6 +10,7 @@ export const MoreInfo = (props) => {
     const { theme } = React.useContext(ThemeContext);
     const { user } = React.useContext(UserContext);
     const { library } = React.useContext(LibrarySystemContext);
+    const toast = useToast();
 
     const backgroundColor = useToken('colors', useColorModeValue('warmGray.200', 'coolGray.900'));
     const textColor = useToken('colors', useColorModeValue('gray.800', 'coolGray.200'));
@@ -22,7 +23,7 @@ export const MoreInfo = (props) => {
             variant="link"
             bgColor={backgroundColor}
             onPress={async () => {
-                passUserToDiscovery(library.baseUrl, props.module, user.id, backgroundColor, textColor, props.recordId)
+                passUserToDiscovery(toast, library.baseUrl, props.module, user.id, backgroundColor, textColor, props.recordId)
             }}>
             <ButtonText color={textColor}>{props.title}</ButtonText>
         </Button>

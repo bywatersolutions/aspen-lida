@@ -1,4 +1,30 @@
-import { Box, Button, ButtonSpinner, ButtonGroup, ButtonIcon, ButtonText, Text, Heading, Icon, CloseIcon, Modal, ModalBackdrop, ModalContent, ModalHeader, ModalCloseButton, ModalBody, ModalFooter, FormControl, FormControlLabel, FormControlLabelText, Input, InputField, InputSlot, InputIcon } from '@gluestack-ui/themed';
+import {
+     Box,
+     Button,
+     ButtonSpinner,
+     ButtonGroup,
+     ButtonIcon,
+     ButtonText,
+     Text,
+     Heading,
+     Icon,
+     CloseIcon,
+     Modal,
+     ModalBackdrop,
+     ModalContent,
+     ModalHeader,
+     ModalCloseButton,
+     ModalBody,
+     ModalFooter,
+     FormControl,
+     FormControlLabel,
+     FormControlLabelText,
+     Input,
+     InputField,
+     InputSlot,
+     InputIcon,
+     useToast
+} from '@gluestack-ui/themed';
 import React from 'react';
 import _ from 'lodash';
 import { useQueryClient } from '@tanstack/react-query';
@@ -88,6 +114,7 @@ export const CheckOut = (props) => {
           const [password, setPassword] = React.useState(user?.alternateLibraryCardPassword ?? '');
           const [showPassword, setShowPassword] = React.useState(false);
           const toggleShowPassword = () => setShowPassword(!showPassword);
+          const toast = useToast();
 
           const source = {
                baseUrl: library.baseUrl,
@@ -120,17 +147,17 @@ export const CheckOut = (props) => {
           };
           return (
                <>
-                    <Button minWidth="100%" maxWidth="100%" bgColor={theme['colors']['primary']['500']} onPress={() => setShowAddAlternateLibraryCardModal(true)}>
-                         <ButtonText color={theme['colors']['primary']['500-text']}>{title}</ButtonText>
+                    <Button minWidth="100%" maxWidth="100%" bgColor={theme.tokens.colors.primary['500']} onPress={() => setShowAddAlternateLibraryCardModal(true)}>
+                         <ButtonText color={theme.tokens.colors.primary['500-text']}>{title}</ButtonText>
                     </Button>
                     <Modal isOpen={showAddAlternateLibraryCardModal} onClose={() => setShowAddAlternateLibraryCardModal(false)} closeOnOverlayClick={false} size="lg">
                          <ModalBackdrop />
-                         <ModalContent maxWidth="90%" bgColor={colorMode === 'light' ? theme['colors']['warmGray']['50'] : theme['colors']['coolGray']['700']}>
-                              <ModalHeader borderBottomWidth="$1" borderBottomColor={colorMode === 'light' ? theme['colors']['warmGray']['300'] : theme['colors']['coolGray']['500']}>
+                         <ModalContent maxWidth="90%" bgColor={colorMode === 'light' ? "$warmGray50" : "$coolGray700"}>
+                              <ModalHeader borderBottomWidth="$1" borderBottomColor={colorMode === 'light' ? "$warmGray300" : "$coolGray500"}>
                                    <Heading size="md" color={textColor}>
                                         {getTermFromDictionary(language, 'add_alternate_library_card')}
                                    </Heading>
-                                   <ModalCloseButton hitSlop={{ top: 30, bottom: 30, left: 30, right: 30 }}>
+                                   <ModalCloseButton p="$3" onPress={() => { setShowAddAlternateLibraryCardModal(false); }}>
                                         <Icon as={CloseIcon} color={textColor} />
                                    </ModalCloseButton>
                               </ModalHeader>
@@ -142,7 +169,7 @@ export const CheckOut = (props) => {
                                                   {cardLabel}
                                              </FormControlLabelText>
                                         </FormControlLabel>
-                                        <Input borderColor={colorMode === 'light' ? theme['colors']['coolGray']['500'] : theme['colors']['gray']['300']}>
+                                        <Input borderColor={colorMode === 'light' ? "$coolGray500" : "$warmGray300"}>
                                              <InputField textContentType="none" color={textColor} name="card" defaultValue={card} accessibilityLabel={cardLabel} onChangeText={(value) => setCard(value)} />
                                         </Input>
                                    </FormControl>
@@ -153,7 +180,7 @@ export const CheckOut = (props) => {
                                                        {passwordLabel}
                                                   </FormControlLabelText>
                                              </FormControlLabel>
-                                             <Input borderColor={colorMode === 'light' ? theme['colors']['coolGray']['500'] : theme['colors']['gray']['300']}>
+                                             <Input borderColor={colorMode === 'light' ? "$coolGray500" : "$warmGray300"}>
                                                   <InputField textContentType="none" type={showPassword ? 'text' : 'password'} color={textColor} name="password" defaultValue={password} accessibilityLabel={passwordLabel} onChangeText={(value) => setPassword(value)} />
                                                   <InputSlot onPress={toggleShowPassword}>
                                                        <InputIcon as={showPassword ? Eye : EyeOff} mr="$2" color={textColor} />
@@ -162,27 +189,25 @@ export const CheckOut = (props) => {
                                         </FormControl>
                                    ) : null}
                               </ModalBody>
-                              <ModalFooter borderTopWidth="$1" borderTopColor={colorMode === 'light' ? theme['colors']['warmGray']['300'] : theme['colors']['coolGray']['500']}>
+                              <ModalFooter borderTopWidth="$1" borderTopColor={colorMode === 'light' ? "$warmGray300" : "$coolGray500"}>
                                    <ButtonGroup space="sm">
                                         <Button
                                              variant="outline"
-                                             borderColor={colorMode === 'light' ? theme['colors']['warmGray']['300'] : theme['colors']['coolGray']['500']}
+                                             borderColor={colorMode === 'light' ? "$warmGray300" : "$coolGray500"}
                                              onPress={() => {
                                                   setShowAddAlternateLibraryCardModal(false);
                                                   setLoading(false);
                                              }}>
-                                             <ButtonText color={colorMode === 'light' ? theme['colors']['warmGray']['500'] : theme['colors']['coolGray']['300']}>{getTermFromDictionary(language, 'close_window')}</ButtonText>
+                                             <ButtonText color={colorMode === 'light' ? "$warmGray500" : "$coolGray300"}>{getTermFromDictionary(language, 'close_window')}</ButtonText>
                                         </Button>
                                         <Button
-                                             bgColor={theme['colors']['primary']['500']}
+                                             bgColor={theme.tokens.colors.primary['500']}
                                              isDisabled={loading}
                                              onPress={async () => {
                                                   setLoading(true);
                                                   await updateCard();
-                                                  await completeAction(record, type, user.id, null, null, null, null, null, library.baseUrl).then(async (response) => {
-                                                       if (__DEV__) {
-                                                            console.log("Completed Action - Checkout with alternate card");
-                                                       }
+                                                  await completeAction(toast, record, type, user.id, null, null, null, null, null, library.baseUrl).then(async (response) => {
+                                                       logDebugMessage("Completed Action - Checkout with alternate card");
                                                        setResponse(response);
                                                        if (response.success) {
                                                             queryClient.invalidateQueries({ queryKey: ['checkouts', user.id, library.baseUrl, language] });
@@ -193,7 +218,7 @@ export const CheckOut = (props) => {
                                                        setShowAddAlternateLibraryCardModal(false);
                                                   });
                                              }}>
-                                             {loading ? <ButtonSpinner color={theme['colors']['primary']['500-text']} /> : <ButtonText color={theme['colors']['primary']['500-text']}>{title}</ButtonText>}
+                                             {loading ? <ButtonSpinner color={theme.tokens.colors.primary['500-text']} /> : <ButtonText color={theme.tokens.colors.primary['500-text']}>{title}</ButtonText>}
                                         </Button>
                                    </ButtonGroup>
                               </ModalFooter>
@@ -207,15 +232,13 @@ export const CheckOut = (props) => {
                     <Button
                          minWidth="100%"
                          maxWidth="100%"
-                         bgColor={theme['colors']['primary']['500']}
+                         bgColor={theme.tokens.colors.primary['500']}
                          variant="solid"
                          onPress={async () => {
                               setLoading(true);
-                              await completeAction(record, type, user.id, null, null, null, null, null, library.baseUrl).then(async (eContentResponse) => {
+                              await completeAction(toast, record, type, user.id, null, null, null, null, null, library.baseUrl).then(async (eContentResponse) => {
                                    setResponse(eContentResponse);
-                                   if (__DEV__) {
-                                        console.log("Completed Action - Checkout");
-                                   }
+                                   logDebugMessage("Completed Action - Checkout");
                                    if (eContentResponse.success) {
                                         queryClient.invalidateQueries({ queryKey: ['checkouts', user.id, library.baseUrl, language] });
                                         queryClient.invalidateQueries({ queryKey: ['user', library.baseUrl, language] });
@@ -224,7 +247,7 @@ export const CheckOut = (props) => {
                                    setResponseIsOpen(true);
                               });
                          }}>
-                         {loading ? <ButtonSpinner color={theme['colors']['primary']['500-text']} pr={2} /> : <ButtonText color={theme['colors']['primary']['500-text']}>{title}</ButtonText>}
+                         {loading ? <ButtonSpinner color={theme.tokens.colors.primary['500-text']} pr={2} /> : <ButtonText color={theme.tokens.colors.primary['500-text']}>{title}</ButtonText>}
                     </Button>
                </>
           );

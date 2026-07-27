@@ -42,8 +42,7 @@ export const SelectNewHoldSublocation = (props) => {
 
                     //sublocations need to convert from an object to an array!
                     if (validSublocationSize > 1) {
-                         //console.log("Displaying sublocations, got " + validSublocationSize);
-
+                         const bottomPadding = Platform.OS === 'android' ? (insets ? insets.bottom : 0) + 16 : '$4';
                          return (
                               <>
                                    <FormControl>
@@ -56,16 +55,16 @@ export const SelectNewHoldSublocation = (props) => {
                                              <SelectTrigger variant="outline" size="md">
                                                   {validSublocations.map((sublocation, index) => {
                                                        if (sublocation.id === activeSublocation) {
-                                                            return <SelectInput value={sublocation.displayName} color={textColor} />;
+                                                            return <SelectInput py={0} value={sublocation.displayName} color={textColor} />;
                                                        }
                                                   })}
                                                   <SelectIcon mr="$3" as={ChevronDownIcon} color={textColor} />
                                              </SelectTrigger>
-                                             <SelectPortal useRNModal={true}>
+                                             <SelectPortal>
                                                   <SelectBackdrop />
                                                   <SelectContent
-                                                       bgColor={colorMode === 'light' ? theme['colors']['warmGray']['50'] : theme['colors']['coolGray']['700']}
-                                                       pb={Platform.OS === 'android' ? insets.bottom + 16 : '$4'}
+                                                       bgColor={colorMode === 'light' ? "$warmGray50" : "$coolGray700"}
+                                                       pb={bottomPadding}
                                                   >
                                                        <SelectDragIndicatorWrapper>
                                                             <SelectDragIndicator />
@@ -73,7 +72,7 @@ export const SelectNewHoldSublocation = (props) => {
                                                        <SelectScrollView>
                                                             {validSublocations.map((sublocation, index) => {
                                                                  if (sublocation.id === activeSublocation) {
-                                                                      return <SelectItem label={sublocation.displayName} value={sublocation.id} key={index} bgColor={theme['colors']['tertiary']['300']} sx={{ _text: { color: theme['colors']['tertiary']['500-text']} }} />;
+                                                                      return <SelectItem label={sublocation.displayName} value={sublocation.id} key={index} bgColor={theme.tokens.colors.tertiary['300']} sx={{ _text: { color: theme.tokens.colors.tertiary['500-text']} }} />;
                                                                  }
                                                                  return <SelectItem label={sublocation.displayName} value={sublocation.id} key={index} sx={{ _text: { color: textColor } }} />;
                                                             })}

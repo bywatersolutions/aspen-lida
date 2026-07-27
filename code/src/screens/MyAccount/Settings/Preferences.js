@@ -3,44 +3,43 @@ import { useNavigation } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import _ from 'lodash';
-import { Box, Divider, HStack, Icon, Pressable, Text, VStack } from 'native-base';
+import { Box, Divider, HStack, Icon, Pressable, Text, VStack, ChevronRightIcon } from '@gluestack-ui/themed';
 import React from 'react';
-import { LanguageContext, LibraryBranchContext, LibrarySystemContext, UserContext } from '../../../context/initialContext';
+import { LanguageContext, LibraryBranchContext, LibrarySystemContext, UserContext, ThemeContext } from '../../../context/initialContext';
 
 // custom components and helper files
 import { navigate } from '../../../helpers/RootNavigator';
 import { UseColorMode } from '../../../themes/theme';
 import { getTermFromDictionary, LanguageSwitcher } from '../../../translations/TranslationService';
 import { logErrorMessage } from '../../../util/logging';
+import * as Device from "expo-device";
 
 export const PreferencesScreen = () => {
      const navigation = useNavigation();
      const { library } = React.useContext(LibrarySystemContext);
      const { location } = React.useContext(LibraryBranchContext);
      const { language } = React.useContext(LanguageContext);
-     const { user, expoToken, updateExpoToken, updateAspenToken } = React.useContext(UserContext);
+     const { user, expoToken, updateExpoToken } = React.useContext(UserContext);
+     const { textColor } = React.useContext(ThemeContext);
 
      React.useEffect(() => {
           const updateTokens = navigation.addListener('focus', async () => {
-               if (Constants.isDevice) {
-                    try {
-                         const token = (
-                              await Notifications.getExpoPushTokenAsync({
-                                   projectId: Constants.expoConfig.extra.eas.projectId,
-                              })
-                         ).data;
-                         if (token) {
-                              if (!_.isEmpty(user.notification_preferences)) {
-                                   const tokenStorage = user.notification_preferences;
-                                   if (_.find(tokenStorage, _.matchesProperty('token', token))) {
-                                        updateAspenToken(true);
-                                        updateExpoToken(token);
-                                   }
+               try {
+                    const token = (!Device.isDevice
+                         ? { data: 'ExponentPushToken[testToken' + Device.modelName + ']' }
+                         : await Notifications.getExpoPushTokenAsync({
+                              projectId: Constants.expoConfig.extra.eas.projectId,
+                         })).data;
+                    if (token) {
+                         if (!_.isEmpty(user.notification_preferences)) {
+                              const tokenStorage = user.notification_preferences;
+                              if (_.find(tokenStorage, _.matchesProperty('token', token))) {
+                                   updateExpoToken(token);
                               }
                          }
-                    } catch (error) {
-                         logErrorMessage('Error fetching Expo push token:', error);
                     }
+               } catch (error) {
+                    logErrorMessage('Error fetching Expo push token:', error);
                }
           });
           return updateTokens;
@@ -48,44 +47,44 @@ export const PreferencesScreen = () => {
 
      return (
           <Box safeArea={5}>
-               <VStack divider={<Divider />} space="4">
-                    <VStack space="3">
+               <VStack divider={<Divider />} space="$md">
+                    <VStack space="$md" mx={4} my={8}>
                          <VStack>
-                              <Pressable py="3" onPress={() => navigate('MyPreferences_ManageBrowseCategories')}>
-                                   <HStack space="1" alignItems="center">
-                                        <Icon as={MaterialIcons} name="chevron-right" size="7" />
-                                        <Text fontWeight="500">{getTermFromDictionary(language, 'manage_browse_categories')}</Text>
+                              <Pressable py="$2" onPress={() => navigate('MyPreferences_ManageBrowseCategories', { prevRoute: 'Preferences' })}>
+                                   <HStack space="xs" alignItems="center">
+                                        <Icon as={MaterialIcons} name="chevron-right" size="xl" color={textColor} />
+                                        <Text color={textColor} fontWeight="$medium">{getTermFromDictionary(language, 'manage_browse_categories')}</Text>
                                    </HStack>
                               </Pressable>
                               {library.allowPickupLocationUpdates ? (
-                                  <Pressable py="3" onPress={() => navigate('MyPreferences_ManagePickupLocations')}>
-                                       <HStack space="1" alignItems="center">
-                                            <Icon as={MaterialIcons} name="chevron-right" size="7" />
-                                            <Text fontWeight="500">{getTermFromDictionary(language, 'manage_pickup_locations')}</Text>
+                                  <Pressable py="$2" onPress={() => navigate('MyPreferences_ManagePickupLocations')}>
+                                       <HStack space="xs" alignItems="center">
+                                            <Icon as={MaterialIcons} name="chevron-right" size="xl" color={textColor} />
+                                            <Text color={textColor} fontWeight="$medium">{getTermFromDictionary(language, 'manage_pickup_locations')}</Text>
                                        </HStack>
                                   </Pressable>
                               ) : null}
-                              <Pressable py="3" onPress={() => navigate('PermissionDashboard')}>
-                                   <HStack space="1" alignItems="center">
-                                        <Icon as={MaterialIcons} name="chevron-right" size="7" />
-                                        <Text fontWeight="500">{getTermFromDictionary(language, 'device_permissions')}</Text>
+                              <Pressable py="$2" onPress={() => navigate('PermissionDashboard')}>
+                                   <HStack space="xs" alignItems="center">
+                                        <Icon as={MaterialIcons} name="chevron-right" size="xl" color={textColor} />
+                                        <Text color={textColor} fontWeight="$medium">{getTermFromDictionary(language, 'device_permissions')}</Text>
                                    </HStack>
                               </Pressable>
-                              <Pressable py="3" onPress={() => navigate('MyDevice_Support')}>
-                                   <HStack space="1" alignItems="center">
-                                        <Icon as={MaterialIcons} name="chevron-right" size="7" />
-                                        <Text fontWeight="500">{getTermFromDictionary(language, 'support')}</Text>
+                              <Pressable py="$2" onPress={() => navigate('MyDevice_Support')}>
+                                   <HStack space="xs" alignItems="center">
+                                        <Icon as={MaterialIcons} name="chevron-right" size="xl" color={textColor} />
+                                        <Text color={textColor} fontWeight="$medium">{getTermFromDictionary(language, 'support')}</Text>
                                    </HStack>
                               </Pressable>
                          </VStack>
                     </VStack>
-                    <VStack>
+                    <VStack space="$md" mx={12} >
                          <HStack justifyContent="space-between" alignItems="center">
-                              <Text bold>{getTermFromDictionary(language, 'language')}</Text>
+                              <Text color={textColor} bold>{getTermFromDictionary(language, 'language')}</Text>
                               <LanguageSwitcher />
                          </HStack>
                          <HStack justifyContent="space-between" alignItems="center">
-                              <Text bold>{getTermFromDictionary(language, 'appearance')}</Text>
+                              <Text color={textColor} bold>{getTermFromDictionary(language, 'appearance')}</Text>
                               <UseColorMode showText={true} />
                          </HStack>
                     </VStack>
