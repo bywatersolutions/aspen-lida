@@ -1,6 +1,18 @@
 import { SearchIcon } from 'lucide-react-native';
 
-import { Button, ButtonGroup, ButtonIcon, ButtonText, Box, Center, HStack, Text, SafeAreaView, ScrollView } from '@gluestack-ui/themed';
+import {
+     Button,
+     ButtonGroup,
+     ButtonIcon,
+     ButtonText,
+     Box,
+     Center,
+     HStack,
+     Text,
+     SafeAreaView,
+     ScrollView,
+     useToast
+} from '@gluestack-ui/themed';
 import { useRoute } from '@react-navigation/native';
 import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
@@ -120,7 +132,7 @@ export const GroupedWorkScreen = () => {
                     loadError(error, '')
                ) : (
                     <ScrollView>
-                         <Box sx={{ '@base': { height: 150 }, '@lg': { height: 200 } }} w="100%" bgColor={colorMode === 'light' ? theme['colors']['warmGray']['200'] : theme['colors']['coolGray']['900']} zIndex={-1} position="absolute" left={0} top={0} />
+                         <Box sx={{ '@base': { height: 150 }, '@lg': { height: 200 } }} width="$full" bgColor={colorMode === 'light' ? "$warmGray200" : "$coolGray900"} zIndex={-1} position="absolute" left={0} top={0} />
                          {_.size(systemMessages) > 0 ? <Box p="$2">{showSystemMessage()}</Box> : null}
                          <DisplayGroupedWork data={data.results} initialFormat={data.format} updateFormat={data.format} />
                     </ScrollView>
@@ -136,8 +148,7 @@ const DisplayGroupedWork = (payload) => {
      const { format } = React.useContext(GroupedWorkContext);
      const { library } = React.useContext(LibrarySystemContext);
      const { language } = React.useContext(LanguageContext);
-     const { textColor, theme, colorMode } = React.useContext(ThemeContext);
-     const backgroundColor = colorMode === 'light' ? theme['colors']['warmGray']['200'] : theme['colors']['coolGray']['900'];
+     const { colorMode } = React.useContext(ThemeContext);
 
      const formats = Object.keys(groupedWork.formats);
 
@@ -162,9 +173,9 @@ const DisplayGroupedWork = (payload) => {
      const key = 'large_' + groupedWork.id;
 
      return (
-          <Box p="$5" w="100%">
+          <Box p="$5" width="$full">
                <Center mt="$5" width="100%">
-                    <Image alt={groupedWork.title} source={groupedWork.cover} style={{ width: 180, height: 250, borderRadius: 4 }} placeholder={blurhash} transition={1000} contentFit="cover" />
+                    <Image alt={groupedWork.title} source={groupedWork.cover} style={{ width: 180, height: 250, borderRadius: "$sm" }} placeholder={blurhash} transition={1000} contentFit="cover" />
                     <Title title={groupedWork.title} />
                     <Author author={groupedWork.author} />
                </Center>
@@ -199,8 +210,8 @@ const Author = ({ author }) => {
      if (author) {
           return (
                <Button size="sm" variant="link" onPress={() => startSearch(author, 'SearchResults', library.baseUrl)}>
-                    <ButtonIcon as={SearchIcon} color={colorMode === 'light' ? theme['colors']['coolGray']['700'] : theme['colors']['warmGray']['100']} size="xs" mr="$1" />
-                    <ButtonText fontWeight="normal" color={colorMode === 'light' ? theme['colors']['coolGray']['700'] : theme['colors']['warmGray']['100']}>
+                    <ButtonIcon as={SearchIcon} color={colorMode === 'light' ? "$coolGray700" : "$warmGray100"} size="xs" mr="$1" />
+                    <ButtonText fontWeight="normal" color={colorMode === 'light' ? "$coolGray700" : "$warmGray100"}>
                          {author}
                     </ButtonText>
                </Button>
@@ -218,8 +229,8 @@ const Format = (data) => {
      const { theme, colorMode } = React.useContext(ThemeContext);
 
      return (
-          <Button size="sm" bg={btnStyle === 'outline' ? 'transparent' : theme['colors']['secondary']['400']} borderColor={colorMode === 'light' ? theme['colors']['coolGray']['700'] : theme['colors']['warmGray']['100']} mb="$1" mr="$1" variant={btnStyle} onPress={() => updateFormat(key)}>
-               <ButtonText color={btnStyle === 'outline' ? (colorMode === 'light' ? theme['colors']['coolGray']['700'] : theme['colors']['warmGray']['100']) : theme['colors']['secondary']['400-text']}>{format.label}</ButtonText>
+          <Button size="sm" bg={btnStyle === 'outline' ? 'transparent' : theme['tokens']['colors']['secondary']['400']} borderColor={colorMode === 'light' ? "$coolGray700" : "$warmGray100"} mb="$1" mr="$1" variant={btnStyle} onPress={() => updateFormat(key)}>
+               <ButtonText color={btnStyle === 'outline' ? (colorMode === 'light' ? "$coolGray700" : "$warmGray100") : theme['tokens']['colors']['secondary']['400-text']}>{format.label}</ButtonText>
           </Button>
      );
 };
@@ -288,8 +299,9 @@ const BibliographicInformationLink = ({ groupedWorkId }) => {
      const { theme, colorMode } = React.useContext(ThemeContext);
      const { user } = React.useContext(UserContext);
      const { library } = React.useContext(LibrarySystemContext);
-     const backgroundColor = colorMode === 'light' ? theme['colors']['warmGray']['200'] : theme['colors']['coolGray']['900'];
-     const textColor = colorMode === 'light' ? theme['colors']['gray']['800'] : theme['colors']['coolGray']['200'];
+     const backgroundColor = colorMode === 'light' ? "$warmGray200" : "$coolGray900";
+     const textColor = colorMode === 'light' ? "$warmGray800" : "$coolGray200";
+     const toast = useToast();
 
      let showMoreInfoBtn = false;
      if(library?.showMoreInfoBtn) {
@@ -298,8 +310,8 @@ const BibliographicInformationLink = ({ groupedWorkId }) => {
 
      if (groupedWorkId && showMoreInfoBtn) {
           return (
-          <Button onPress={async () => await passUserToDiscovery(library.baseUrl, 'GroupedWork', user.id, backgroundColor, textColor, groupedWorkId)} bgColor={theme['colors']['secondary']['500']}>
-               <ButtonText color={theme['colors']['secondary']['500-text']}>
+          <Button onPress={async () => await passUserToDiscovery(toast, library.baseUrl, 'GroupedWork', user.id, backgroundColor, textColor, groupedWorkId)} bgColor={theme['tokens']['colors']['secondary']['500']}>
+               <ButtonText color={theme['tokens']['colors']['secondary']['500-text']}>
                     {getTermFromDictionary(language, 'more_information')}
                </ButtonText>
           </Button>

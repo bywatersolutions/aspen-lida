@@ -120,17 +120,15 @@ export const LIBRARY = {
      name: '',
      favicon: '',
      languages: [],
-     vdx: [],
      localIll: [],
      id: 0,
      version: null,
+     appSettingsUrl: null,
+     appSettingsSlug: null,
 };
 
 export const BRANCH = {
      name: '',
-     vdxFormId: null,
-     vdxLocation: null,
-     vdx: [],
      localIllFormId: null,
 };
 

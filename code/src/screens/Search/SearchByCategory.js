@@ -37,7 +37,6 @@ export const SearchResultsForBrowseCategory = () => {
                     let tmp = getTermFromDictionary(language, 'page_of_page');
                     tmp = tmp.replace('%1%', page);
                     tmp = tmp.replace('%2%', data.totalPages);
-                    console.log(tmp);
                     setPaginationLabel(tmp);
                }
           },
@@ -62,23 +61,22 @@ export const SearchResultsForBrowseCategory = () => {
      const Paging = () => {
           if (data.totalPages > 1) {
                return (
-                    <Box p="$2" bgColor={colorMode === 'light' ? theme['colors']['coolGray']['100'] : theme['colors']['coolGray']['700']} borderTopWidth={1} borderColor={colorMode === 'light' ? theme['colors']['coolGray']['200'] : theme['colors']['gray']['600']} flexWrap="nowrap" alignItems="center">
+                    <Box p="$2" bgColor={colorMode === 'light' ? "$coolGray100" : "$coolGray700"} borderTopWidth="$1" borderColor={colorMode === 'light' ? "$coolGray200" : "$warmGray600"} flexWrap="nowrap" alignItems="center">
                          <ScrollView horizontal>
                               <ButtonGroup>
-                                   <Button onPress={() => setPage(page - 1)} isDisabled={page === 1} size="sm" bgColor={theme['colors']['primary']['500']}>
-                                        <ButtonText color={theme['colors']['primary']['500-text']}>{getTermFromDictionary(language, 'previous')}</ButtonText>
+                                   <Button onPress={() => setPage(page - 1)} isDisabled={page === 1} size="sm" bgColor={theme.tokens.colors.primary['500']}>
+                                        <ButtonText color={theme.tokens.colors.primary['500-text']}>{getTermFromDictionary(language, 'previous')}</ButtonText>
                                    </Button>
                                    <Button
-                                        bgColor={theme['colors']['primary']['500']}
+                                        bgColor={theme.tokens.colors.primary['500']}
                                         onPress={() => {
                                              if (!isPreviousData && data.hasMore) {
-                                                  console.log('Adding to page');
                                                   setPage(page + 1);
                                              }
                                         }}
                                         isDisabled={isPreviousData || !data.hasMore}
                                         size="sm">
-                                        <ButtonText color={theme['colors']['primary']['500-text']}>{getTermFromDictionary(language, 'next')}</ButtonText>
+                                        <ButtonText color={theme.tokens.colors.primary['500-text']}>{getTermFromDictionary(language, 'next')}</ButtonText>
                                    </Button>
                               </ButtonGroup>
                          </ScrollView>

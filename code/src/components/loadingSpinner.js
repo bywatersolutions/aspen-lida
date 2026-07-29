@@ -9,36 +9,17 @@ TODO: Translate the accessibility labels
 */
 
 export function loadingSpinner(message = '') {
-     const { theme, textColor, colorMode } = React.useContext(ThemeContext);
-
-     if (message !== '') {
-          return (
-               <Center flex={1} px="3">
-                    <VStack space="md" alignItems="center">
-                         <Spinner size="large" accessibilityLabel="Loading..." color={theme['colors']['primary']['500']}/>
-                         <Heading size="md" color={textColor}>{message}</Heading>
-                    </VStack>
-               </Center>
-          );
-     }
-
-     return (
-          <Center flex={1}>
-               <HStack>
-                    <Spinner size="large" accessibilityLabel="Loading..." />
-               </HStack>
-          </Center>
-     );
+     return <LoadingSpinner message={message} />;
 }
 
 export const LoadingSpinner = (props) => {
-     const { colorMode, theme, textColor } = React.useContext(ThemeContext);
+     const { theme, textColor } = React.useContext(ThemeContext);
      if (!isUndefined(props) && !isEmpty(props) && !isUndefined(props.message) && !isEmpty(props.message)) {
           logDebugMessage("Showing loading spinner with message: " + props.message);
           return (
                <Center flex={1} px="$3">
                     <VStack space="md" alignItems="center">
-                         <Spinner size="large" color={theme['colors']['primary']['500']} accessibilityLabel="Loading..." />
+                         <Spinner size="large" color={theme.tokens?.colors.primary['500']} accessibilityLabel="Loading..." />
                          <Heading size="md" color={textColor}>
                               {props.message}
                          </Heading>
@@ -50,7 +31,7 @@ export const LoadingSpinner = (props) => {
      return (
           <Center flex={1}>
                <HStack>
-                    <Spinner color={theme['colors']['primary']['500']} size="large" accessibilityLabel="Loading..." />
+                    <Spinner color={theme.tokens?.colors.primary['500']} size="large" accessibilityLabel="Loading..." />
                </HStack>
           </Center>
      );

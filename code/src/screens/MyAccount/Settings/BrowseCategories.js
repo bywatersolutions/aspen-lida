@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRoute, useNavigation, CommonActions, StackActions } from '@react-navigation/native';
-import { Box, FlatList, HStack, Switch, Text, Pressable, ChevronLeftIcon } from 'native-base';
+import { Box, FlatList, HStack, Switch, Text, Pressable, ChevronLeftIcon } from '@gluestack-ui/themed';
 import React from 'react';
-import { loadingSpinner } from '../../../components/loadingSpinner';
+import { BackHandler } from 'react-native';
+import { LoadingSpinner } from '../../../components/loadingSpinner';
 import { DisplayErrorAlertDialog } from '../../../components/loadError';
 import { BrowseCategoryContext, LanguageContext, LibrarySystemContext, ThemeContext } from '../../../context/initialContext';
 
@@ -24,23 +25,41 @@ export const Settings_BrowseCategories = () => {
      const handleGoBack = () => {
           if (route?.params?.prevRoute === 'HomeScreen') {
                navigation.dispatch(CommonActions.setParams({ prevRoute: null }));
-               navigation.dispatch(StackActions.replace('MoreMenu'));
-          } else {
                navigation.goBack();
+          } else if (route?.params?.prevRoute === 'Preferences') {
+               navigation.dispatch(CommonActions.setParams({ prevRoute: null }));
+               navigation.goBack();
+          } else {
+               if (navigation.canGoBack()) {
+                    navigation.goBack();
+               } else {
+                    navigation.dispatch(StackActions.replace('MoreMenu'));
+               }
           }
      };
+
+     React.useEffect(() => {
+          const backAction = () => {
+               handleGoBack();
+               return true;
+          };
+
+          const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+          return () => backHandler.remove();
+     }, [route?.params?.prevRoute, navigation]);
 
      React.useLayoutEffect(() => {
           navigation.setOptions({
                headerLeft: () => (
-                    <Pressable onPress={handleGoBack} mr={3} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                         <ChevronLeftIcon size="md" ml={1} color={theme['colors']['primary']['baseContrast']} />
+                    <Pressable onPress={handleGoBack} mr={3} p="$1">
+                         <ChevronLeftIcon size="md" ml={1} color={theme['tokens']['colors']['primary']['baseContrast']} />
                     </Pressable>
                ),
           });
-     }, [navigation]);
+     }, [navigation, theme]);
 
-     const { status, data, error, isFetching } = useQuery(['browse_categories_list', library.baseUrl, language], () => getBrowseCategoryListForUser(library.baseUrl), {
+     const { isFetching } = useQuery(['browse_categories_list', library.baseUrl, language], () => getBrowseCategoryListForUser(library.baseUrl), {
           initialData: list,
           onSuccess: (data) => {
                if(data.ok){
@@ -56,14 +75,14 @@ export const Settings_BrowseCategories = () => {
                logDebugMessage("Error fetching browse category list for user");
                logErrorMessage(error);
           },
-          onSettle: (data) => {
+          onSettle: () => {
                setLoading(false);
           },
           placeholderData: [],
      });
 
      if (loading || isFetching) {
-          return loadingSpinner();
+          return <LoadingSpinner />;
      }
 
      return <FlatList keyExtractor={(item) => item.key} data={list} renderItem={({ item }) => <DisplayCategory data={item} setLoading={setLoading} />} />;
@@ -72,7 +91,6 @@ export const Settings_BrowseCategories = () => {
 const DisplayCategory = (data) => {
      const queryClient = useQueryClient();
      const category = data.data;
-     const setLoading = data.setLoading;
      const [toggled, setToggle] = React.useState(!category.isHidden);
      const [showErrorDialog, setShowErrorDialog] = React.useState(false);
      const [errorTitle, setErrorTitle] = React.useState('');
@@ -81,10 +99,14 @@ const DisplayCategory = (data) => {
      const { library } = React.useContext(LibrarySystemContext);
      const { language } = React.useContext(LanguageContext);
      const { maxNum } = React.useContext(BrowseCategoryContext);
+     const { colorMode, textColor, theme} = React.useContext(ThemeContext);
+
+     React.useEffect(() => {
+          setToggle(!category.isHidden);
+     }, [category.isHidden]);
 
      const updateToggle = async (category) => {
           const key = category['key'] ?? category['sourceId'];
-          category['isHidden'] = !category['isHidden'];
           await updateBrowseCategoryStatus(key, library.baseUrl).then(async (response) => {
                if (!response.ok) {
                     const error = getErrorMessage({ statusCode: response.status, problem: response.problem });
@@ -92,24 +114,23 @@ const DisplayCategory = (data) => {
                     setErrorMessage(error.message);
                     logErrorMessage(response);
                     setShowErrorDialog(true);
+                    setToggle(!category.isHidden);
                } else {
                     await queryClient.invalidateQueries({ queryKey: ['browse_categories', library.baseUrl, language, maxNum] });
                     await queryClient.invalidateQueries({ queryKey: ['browse_categories_list', library.baseUrl, language] });
                }
           });
-          logDebugMessage("Finished toggling " + key + ' hidden is ' + category['isHidden']);
+          logDebugMessage("Finished toggling " + key);
      };
      return (
-          <Box borderBottomWidth="1" _dark={{ borderColor: 'gray.600' }} borderColor="coolGray.200" pl="4" pr="5" py="2">
+          <Box borderBottomWidth="$1" _dark={{ borderColor: 'gray.600' }} borderColor="coolGray.200" pl="$4" pr="$5" py="$2">
                <HStack space={3} alignItems="center" justifyContent="space-between" pb={1}>
                     <Text
                          flexWrap="wrap"
+                         flex={1}
+                         color={textColor}
                          bold
-                         maxW="80%"
-                         fontSize={{
-                              base: 'lg',
-                              lg: 'xl',
-                         }}>
+                         fontSize="$lg">
                          {category.title}
                     </Text>
                     <Switch
@@ -119,7 +140,12 @@ const DisplayCategory = (data) => {
                               toggleSwitch();
                               updateToggle(category);
                          }}
-                         isChecked={!category.isHidden}
+                         value={toggled}
+                         trackColor={{
+                              true: theme.tokens.colors.primary['500'],
+                              false: colorMode === 'light' ? '$backgroundLight300' : '$backgroundLight700'
+                         }}
+
                     />
                </HStack>
                {showErrorDialog && (

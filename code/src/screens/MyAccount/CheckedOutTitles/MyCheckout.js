@@ -1,11 +1,10 @@
 import { MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import _ from 'lodash';
 import {
      Actionsheet,
      ActionsheetContent,
      ActionsheetItem,
-     ActionsheetItemText, ActionsheetBackdrop, Box, HStack, Icon, Pressable, Text, VStack, ActionsheetIcon,
+     ActionsheetItemText, ActionsheetBackdrop, HStack, Icon, Pressable, VStack, ActionsheetIcon, useToast,
 } from '@gluestack-ui/themed';
 import React, { useState } from 'react';
 import { Platform } from 'react-native';
@@ -13,31 +12,45 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // custom components and helper files
 import { LanguageContext, LibrarySystemContext, ThemeContext, UserContext } from '../../../context/initialContext';
-import { getAuthor, getCheckedOutTo, getCleanTitle, getDueDate, getFormat, getRenewalCount, getTitle, isOverdue, willAutoRenew, getCollectionName } from '../../../helpers/item';
+import {
+     getAuthor,
+     getCheckedOutTo,
+     getCleanTitle,
+     getDueDate,
+     getFormat,
+     getRenewalCount,
+     getTitle,
+     isOverdue,
+     willAutoRenew,
+     getCollectionName,
+     CheckoutAccessLabel
+} from '../../../helpers/item';
 import { navigate, navigateStack } from '../../../helpers/RootNavigator';
-import { getTermFromDictionary, getTranslationsWithValues } from '../../../translations/TranslationService';
+import { getTermFromDictionary } from '../../../translations/TranslationService';
 import { renewCheckout, returnCheckout, viewOnlineItem, viewOverDriveItem } from '../../../util/api/user';
 import { stripHTML, formatDiscoveryVersion } from '../../../helpers/helpers';
 
-const blurhash = 'MHPZ}tt7*0WC5S-;ayWBofj[K5RjM{ofM_';
-
 export const MyCheckout = (props) => {
-     const checkout = props.data;
-     const checkoutSource = props.checkoutSource
-     const setRenewConfirmationIsOpen = props.setRenewConfirmationIsOpen;
-     const setRenewConfirmationResponse = props.setRenewConfirmationResponse;
-     const reloadCheckouts = props.reloadCheckouts;
      const { user } = React.useContext(UserContext);
      const { library } = React.useContext(LibrarySystemContext);
      const { language } = React.useContext(LanguageContext);
      const version = formatDiscoveryVersion(library.discoveryVersion);
-     const { theme, colorMode, textColor } = React.useContext(ThemeContext);
+     const { colorMode, textColor } = React.useContext(ThemeContext);
      const insets = useSafeAreaInsets();
 
-     if (checkoutSource != 'all' && checkoutSource != checkout.source) {
-          //console.log("Hiding checkout that is the wrong source " + checkoutSource);
-          return null;
-     }
+     const [access, setAccess] = useState(false);
+     const [returning, setReturn] = useState(false);
+     const [renewing, setRenew] = useState(false);
+     const [isOpen, setIsOpen] = React.useState(false);
+
+     const toast = useToast();
+
+     const blurhash = 'MHPZ}tt7*0WC5S-;ayWBofj[K5RjM{ofM_';
+
+     const checkout = props.data;
+     const setRenewConfirmationIsOpen = props.setRenewConfirmationIsOpen;
+     const setRenewConfirmationResponse = props.setRenewConfirmationResponse;
+     const reloadCheckouts = props.reloadCheckouts;
 
      const openGroupedWork = (item, title) => {
           navigateStack('AccountScreenTab', 'MyCheckout', {
@@ -49,12 +62,6 @@ export const MyCheckout = (props) => {
                prevRoute: 'MyCheckouts',
           });
      };
-
-     const [access, setAccess] = useState(false);
-     const [returning, setReturn] = useState(false);
-     const [renewing, setRenew] = useState(false);
-     const [isOpen, setIsOpen] = React.useState(false);
-     const [label, setAccessLabel] = React.useState('Access Online');
      const toggle = () => {
           setIsOpen(!isOpen);
      };
@@ -71,52 +78,6 @@ export const MyCheckout = (props) => {
      if (library.libbyReaderName) {
           libbyReaderName = library.libbyReaderName;
      }
-
-     let formatId;
-     React.useEffect(() => {
-          async function preloadTranslations() {
-               if (checkout?.checkoutSource) {
-                    if (checkout.checkoutSource === 'OverDrive') {
-                         if (checkout.overdriveRead === 1) {
-                              formatId = 'ebook-overdrive';
-                              await getTranslationsWithValues('checkout_read_online', libbyReaderName, language, library.baseUrl).then((term) => {
-                                   setAccessLabel(_.toString(term));
-                              });
-                         } else if (checkout.overdriveListen === 1) {
-                              formatId = 'audiobook-overdrive';
-                              await getTranslationsWithValues('checkout_listen_online', libbyReaderName, language, library.baseUrl).then((term) => {
-                                   setAccessLabel(_.toString(term));
-                              });
-                         } else if (checkout.overdriveVideo === 1) {
-                              formatId = 'video-streaming';
-                              await getTranslationsWithValues('checkout_watch_online', libbyReaderName, language, library.baseUrl).then((term) => {
-                                   setAccessLabel(_.toString(term));
-                              });
-                         } else if (checkout.overdriveMagazine === 1) {
-                              formatId = 'magazine-overdrive';
-                              await getTranslationsWithValues('checkout_read_online', libbyReaderName, language, library.baseUrl).then((term) => {
-                                   setAccessLabel(_.toString(term));
-                              });
-                         } else {
-                              formatId = '';
-                              await getTranslationsWithValues('checkout_access_online', libbyReaderName, language, library.baseUrl).then((term) => {
-                                   setAccessLabel(_.toString(term));
-                              });
-                         }
-                    } else {
-                         let source = checkout.checkoutSource;
-                         if (checkout.checkoutSource === 'Axis360') {
-                              source = 'Boundless';
-                         }
-                         await getTranslationsWithValues('checkout_access_online', source, language, library.baseUrl).then((term) => {
-                              setAccessLabel(_.toString(term));
-                         });
-                    }
-               }
-          }
-
-          preloadTranslations();
-     }, [language]);
 
      let returnEarly = false;
      if (checkout.canReturnEarly === 1 || checkout.canReturnEarly === '1' || checkout.canReturnEarly === true || checkout.canReturnEarly === 'true') {
@@ -158,15 +119,15 @@ export const MyCheckout = (props) => {
 
 
      return (
-          <Pressable onPress={toggle} borderBottomWidth="$1" borderBottomColor={colorMode === 'light' ? theme['colors']['coolGray']['200'] : theme['colors']['coolGray']['500']} pl="$4" pr="$5" py="$2">
-               <HStack space="sm" maxW="75%">
+          <Pressable onPress={toggle} borderBottomWidth="$1" borderBottomColor={colorMode === 'light' ? "$coolGray200" : "$coolGray500"} pl="$4" pr="$5" py="$2">
+               <HStack space="sm" w="75%">
                     <Image
                          alt={checkout.title}
                          source={url}
                          style={{
                               width: 100,
                               height: 150,
-                              borderRadius: 4,
+                              borderRadius: "$sm",
                          }}
                          placeholder={blurhash}
                          transition={1000}
@@ -177,7 +138,7 @@ export const MyCheckout = (props) => {
                          {isOverdue(checkout.overdue)}
                          {getAuthor(checkout.author)}
                          {getFormat(checkout.format, checkout.source)}
-						{getCollectionName(checkout.source, checkout.collectionName ?? null)}
+                         {getCollectionName(checkout.source, checkout.collectionName ?? null)}
                          {getCheckedOutTo(checkout.user)}
                          {getDueDate(checkout.dueDate)}
                          {getRenewalCount(checkout.renewCount ?? 0, checkout.maxRenewals ?? null)}
@@ -187,35 +148,35 @@ export const MyCheckout = (props) => {
                <Actionsheet isOpen={isOpen} onClose={toggle} size="full">
                     <ActionsheetBackdrop />
                     <ActionsheetContent
-                         bgColor={colorMode === 'light' ? theme['colors']['warmGray']['50'] : theme['colors']['coolGray']['700']}
+                         bgColor={colorMode === 'light' ? "$warmGray50" : "$coolGray700"}
                          pb={Platform.OS === 'android' ? insets.bottom + 16 : '$4'}
                     >
                          <ActionsheetItem h={60} px="$4">
                               <ActionsheetItemText bold color={textColor}>{checkout.title}</ActionsheetItemText>
                          </ActionsheetItem>
-						 {checkout.groupedWorkId ? (
-                         <ActionsheetItem
-                              onPress={() => {
-                                   openGroupedWork(checkout.groupedWorkId, checkout.title);
-                                   toggle();
-                              }}
-                              >
-                              <ActionsheetIcon>
-                                   <Icon as={MaterialIcons} name="search" mr="$1" size="md" color={textColor}/>
-                              </ActionsheetIcon>
-                              <ActionsheetItemText color={textColor}>{getTermFromDictionary(language, 'view_item_details')}</ActionsheetItemText>
-                         </ActionsheetItem>
-						 ): null}
+                         {checkout.groupedWorkId ? (
+                              <ActionsheetItem
+                                   onPress={() => {
+                                        openGroupedWork(checkout.groupedWorkId, checkout.title);
+                                        toggle();
+                                   }}
+                                   >
+                                   <ActionsheetIcon>
+                                        <Icon as={MaterialIcons} name="search" mr="$1" size="md" color={textColor}/>
+                                   </ActionsheetIcon>
+                                   <ActionsheetItemText color={textColor}>{getTermFromDictionary(language, 'view_item_details')}</ActionsheetItemText>
+                              </ActionsheetItem>
+                         ): null}
                          {renewMessage ? (
                               <ActionsheetItem
-                                   maxW="100%"
+                                   maxwidth="$full"
                                    isTruncated
                                    isDisabled={canRenew}
                                    isLoading={renewing}
                                    isLoadingText={getTermFromDictionary(language, 'renewing', true)}
                                    onPress={() => {
                                         setRenew(true);
-                                        renewCheckout(checkout.barcode, record, checkout.source, itemId, library.baseUrl, checkout.userId).then((result) => {
+                                        renewCheckout(toast, checkout.barcode, record, checkout.source, itemId, library.baseUrl, checkout.userId).then((result) => {
                                              setRenew(false);
 
                                              if (result?.confirmRenewalFee && result.confirmRenewalFee) {
@@ -255,7 +216,7 @@ export const MyCheckout = (props) => {
                                    isLoadingText={getTermFromDictionary(language, 'accessing', true)}
                                    onPress={() => {
                                         setAccess(true);
-                                        viewOverDriveItem(checkout.userId, formatId, checkout.overDriveId, library.baseUrl, language).then((result) => {
+                                        viewOverDriveItem(toast, checkout.userId, checkout.formatId, checkout.overDriveId, library.baseUrl, language).then((result) => {
                                              setAccess(false);
                                              toggle();
                                         });
@@ -264,13 +225,13 @@ export const MyCheckout = (props) => {
                                    <ActionsheetIcon>
                                         <Icon as={MaterialIcons} name="book" mr="$1" size="md" color={textColor} />
                                    </ActionsheetIcon>
-                                   <ActionsheetItemText color={textColor}>{label}</ActionsheetItemText>
+                                   <CheckoutAccessLabel checkout={checkout} libbyReaderName={libbyReaderName} baseUrl={library.baseUrl} language={language} color={textColor}></CheckoutAccessLabel>
                               </ActionsheetItem>
                          ) : null}
                          {checkout.source === 'palace_project' ? (
                               <ActionsheetItem onPress={() => handleOpenPalaceProjectInstructions()}>
                                    <ActionsheetIcon>
-                                        <Icon as={MaterialIcons} name="info" color="trueGray.400" mr="1" size="6" color={textColor} />
+                                        <Icon as={MaterialIcons} name="info" color="trueGray.400" mr="1" size="6" />
                                    </ActionsheetIcon>
                                    <ActionsheetItemText color={textColor}>{getTermFromDictionary(language, 'access_instructions')}</ActionsheetItemText>
                               </ActionsheetItem>
@@ -282,7 +243,7 @@ export const MyCheckout = (props) => {
                                         isLoadingText={getTermFromDictionary(language, 'accessing', true)}
                                         onPress={() => {
                                              setAccess(true);
-                                             viewOnlineItem(checkout.userId, checkout.recordId, checkout.source, checkout.accessOnlineUrl, library.baseUrl, language).then((result) => {
+                                             viewOnlineItem(toast, checkout.userId, checkout.recordId, checkout.source, checkout.accessOnlineUrl, library.baseUrl, language).then((result) => {
                                                   setAccess(false);
                                                   toggle();
                                              });
@@ -291,14 +252,14 @@ export const MyCheckout = (props) => {
                                         <ActionsheetIcon>
                                              <Icon as={MaterialIcons} name="book" mr="$1" size="md"  color={textColor}/>
                                         </ActionsheetIcon>
-                                        <ActionsheetItemText color={textColor}>{label}</ActionsheetItemText>
+                                        <CheckoutAccessLabel checkout={checkout} libbyReaderName={libbyReaderName} baseUrl={library.baseUrl} language={language} color={textColor}></CheckoutAccessLabel>
                                    </ActionsheetItem>
                                    <ActionsheetItem
                                         isLoading={returning}
                                         isLoadingText={getTermFromDictionary(language, 'returning', true)}
                                         onPress={() => {
                                              setReturn(true);
-                                             returnCheckout(checkout.userId, record, checkout.source, checkout.overDriveId, library.baseUrl, version, checkout.transactionId, language).then((result) => {
+                                             returnCheckout(toast, checkout.userId, record, checkout.source, checkout.overDriveId, library.baseUrl, version, checkout.transactionId, language).then((result) => {
                                                   setReturn(false);
                                                   reloadCheckouts();
                                                   toggle();
@@ -308,6 +269,7 @@ export const MyCheckout = (props) => {
                                         <ActionsheetIcon>
                                              <Icon as={MaterialIcons} name="logout" mr="$1" size="md"  color={textColor} />
                                         </ActionsheetIcon>
+                                        <CheckoutAccessLabel checkout={checkout} libbyReaderName={libbyReaderName} baseUrl={library.baseUrl} language={language} color={textColor}></CheckoutAccessLabel>
                                         <ActionsheetItemText  color={textColor}>{getTermFromDictionary(language, 'checkout_return_now')}</ActionsheetItemText>
                                    </ActionsheetItem>
                               </>
@@ -319,7 +281,7 @@ export const MyCheckout = (props) => {
                                         isLoadingText={getTermFromDictionary(language, 'returning', true)}
                                         onPress={() => {
                                              setReturn(true);
-                                             returnCheckout(checkout.userId, record, checkout.source, checkout.overDriveId, library.baseUrl, version, checkout.transactionId, language).then((result) => {
+                                             returnCheckout(toast, checkout.userId, record, checkout.source, checkout.overDriveId, library.baseUrl, version, checkout.transactionId, language).then((result) => {
                                                   setReturn(false);
                                                   reloadCheckouts();
                                                   toggle();

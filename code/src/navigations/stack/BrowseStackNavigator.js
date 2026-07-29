@@ -3,15 +3,12 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { Pressable, Icon } from '@gluestack-ui/themed';
 import { MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
-import Platform from 'react-native';
 import Scanner from '../../components/Scanner';
 import TitleWithLogo from '../../components/TitleWithLogo'
-import { LanguageContext, LibrarySystemContext, ThemeContext } from '../../context/initialContext';
-import { navigate } from '../../helpers/RootNavigator';
+import { LanguageContext, ThemeContext } from '../../context/initialContext';
 
 import { DiscoverHomeScreen } from '../../screens/Home/Home';
 import { EventScreen } from '../../screens/Event/Event';
-import { CreateVDXRequest } from '../../screens/GroupedWork/CreateVDXRequest';
 import { CreateLocalIllRequest } from '../../screens/GroupedWork/CreateLocalIllRequest';
 import { CreateLocalIllRequestEmail } from '../../screens/GroupedWork/CreateLocalIllRequestEmail';
 import { Editions } from '../../screens/GroupedWork/Editions';
@@ -30,12 +27,13 @@ import { getTermFromDictionary } from '../../translations/TranslationService';
 
 const BrowseStackNavigator = () => {
      const { language } = React.useContext(LanguageContext);
+     const {textColor} = React.useContext(ThemeContext);
      const Stack = createStackNavigator();
      return (
           <Stack.Navigator
                id="BrowseStack"
                initialRouteName="HomeScreen"
-               screenOptions={({ navigation, route }) => ({
+               screenOptions={() => ({
                     headerShown: true,
                     gestureEnabled: false,
                     headerBackTitleVisible: false,
@@ -75,24 +73,8 @@ const BrowseStackNavigator = () => {
                               return <></>;
                          },
                          headerRight: () => (
-                              <Pressable onPress={() => navigation.goBack()} mr="$3" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                                   <Icon as={MaterialIcons} name="close" size="md" />
-                              </Pressable>
-                         ),
-                    })}
-               />
-               <Stack.Screen
-                    name="CreateVDXRequest"
-                    component={CreateVDXRequest}
-                    options={({ navigation }) => ({
-                         title: getTermFromDictionary(language, 'ill_request_title'),
-                         presentation: 'modal',
-                         headerLeft: () => {
-                              return <></>;
-                         },
-                         headerRight: () => (
-                              <Pressable onPress={() => navigation.goBack()} mr="$3" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                                   <Icon as={MaterialIcons} name="close" size="md" />
+                              <Pressable onPress={() => navigation.goBack()} mr="$3" p="$1">
+                                   <Icon as={MaterialIcons} name="close" size="md" color={textColor}/>
                               </Pressable>
                          ),
                     })}
@@ -107,8 +89,8 @@ const BrowseStackNavigator = () => {
                               return <></>;
                          },
                          headerRight: () => (
-                              <Pressable onPress={() => navigation.goBack()} mr="$3" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                                   <Icon as={MaterialIcons} name="close" size="md" />
+                              <Pressable onPress={() => navigation.goBack()} mr="$3" p="$1">
+                                   <Icon as={MaterialIcons} name="close" size="md" color={textColor}/>
                               </Pressable>
                          ),
                     })}
@@ -123,8 +105,8 @@ const BrowseStackNavigator = () => {
                               return <></>;
                          },
                          headerRight: () => (
-                              <Pressable onPress={() => navigation.goBack()} mr="$3" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                                   <Icon as={MaterialIcons} name="close" size="md" />
+                              <Pressable onPress={() => navigation.goBack()} mr="$3" p="$1">
+                                   <Icon as={MaterialIcons} name="close" size="md" color={textColor} />
                               </Pressable>
                          ),
                     })}
@@ -268,6 +250,7 @@ const BrowseStackNavigator = () => {
 const EditionsStack = createStackNavigator();
 export const EditionsModal = () => {
      const { language } = React.useContext(LanguageContext);
+     const {textColor} = React.useContext(ThemeContext);
      return (
           <EditionsStack.Navigator
                id="EditionsStack"
@@ -278,7 +261,7 @@ export const EditionsModal = () => {
                     headerLeft: () => {
                          if (route.name !== 'Editions') {
                               return (
-                                   <Pressable onPress={() => navigation.goBack()} mr="$3" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                                   <Pressable onPress={() => navigation.goBack()} mr="$3" p="$1">
                                         <Icon as={MaterialIcons} name="chevron-left" size="md" />
                                    </Pressable>
                               );
@@ -287,8 +270,8 @@ export const EditionsModal = () => {
                          }
                     },
                     headerRight: () => (
-                         <Pressable onPress={() => navigation.getParent().pop()} mr="$3" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                              <Icon as={MaterialIcons} name="close" size="md" />
+                         <Pressable onPress={() => navigation.getParent().pop()} mr="$3" p="$1">
+                              <Icon as={MaterialIcons} name="close" size="md" color={textColor}/>
                          </Pressable>
                     ),
                })}>
@@ -317,6 +300,7 @@ export const EditionsModal = () => {
 const FilterModalStack = createNativeStackNavigator();
 const FilterModal = () => {
      const { language } = React.useContext(LanguageContext);
+     const {textColor} = React.useContext(ThemeContext);
      return (
           <FilterModalStack.Navigator
                id="SearchFilters"
@@ -326,8 +310,8 @@ const FilterModal = () => {
                     headerBackVisible: true,
                     headerBackTitleVisible: false,
                     headerRight: () => (
-                         <Pressable onPress={() => navigation.getParent().pop()} mr="$3" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-                              <Icon as={MaterialIcons} name="close" size="md" />
+                         <Pressable onPress={() => navigation.getParent().pop()} mr="$3" p="$1">
+                              <Icon as={MaterialIcons} name="close" size="md" color={textColor} />
                          </Pressable>
                     ),
                })}>

@@ -14,7 +14,7 @@ import {
      Badge,
      BadgeText,
      VStack,
-     Input, InputSlot, InputIcon, InputField, FormControl
+     Input, InputSlot, InputIcon, InputField, FormControl, useToast
 } from '@gluestack-ui/themed';
 import { CommonActions, useNavigation, useRoute } from '@react-navigation/native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,7 +24,6 @@ import _ from 'lodash';
 import {ScanBarcode, SearchIcon, SlidersHorizontalIcon, XIcon} from 'lucide-react-native';
 import moment from 'moment';
 
-import { useColorModeValue, useToken } from 'native-base';
 import React from 'react';
 import { ScrollView } from 'react-native';
 import { loadError, popToast } from '../../components/loadError';
@@ -36,12 +35,12 @@ import { getCleanTitle } from '../../helpers/item';
 import {navigate, navigateStack} from '../../helpers/RootNavigator';
 import { getTermFromDictionary } from '../../translations/TranslationService';
 import { GLOBALS, SearchGlobal } from '../../util/globals';
-import { formatDiscoveryVersion, decodeHTML, isValidUrl } from '../../helpers/helpers';
+import { decodeHTML, isValidUrl } from '../../helpers/helpers';
 import { getAppliedFilters, getAvailableFacetsKeys, getSortList } from '../../util/api/search';
 import { setDefaultFacets } from '../../util/api/searchHelper';
 
 import AddToList from './AddToList';
-import { logDebugMessage, logErrorMessage } from '../../util/logging';
+import {logDebugMessage, logErrorMessage, logInfoMessage} from '../../util/logging';
 import { createApiClient } from '../../util/api/apiFactory';
 
 const blurhash = 'MHPZ}tt7*0WC5S-;ayWBofj[K5RjM{ofM_';
@@ -50,7 +49,7 @@ export const SearchResults = () => {
      const navigation = useNavigation();
      const route = useRoute();
      const [page, setPage] = React.useState(1);
-     const [storedTerm, setStoredTerm] = React.useState('');
+     const [storedTerm, setStoredTerm] = React.useState(SearchGlobal.term);
      const { library } = React.useContext(LibrarySystemContext);
      const { language } = React.useContext(LanguageContext);
      const { scope } = React.useContext(LibraryBranchContext);
@@ -78,7 +77,7 @@ export const SearchResults = () => {
      const systemMessagesForScreen = [];
 
      if (term && term !== storedTerm) {
-          console.log('Search term changed. Clearing previous search options...');
+          logDebugMessage('Search term changed. Clearing previous search options...');
           setStoredTerm(term);
           setPage(1);
           SearchGlobal.pendingFilters = [];
@@ -112,7 +111,6 @@ export const SearchResults = () => {
                     let tmp = getTermFromDictionary(language, 'page_of_page');
                     tmp = tmp.replace('%1%', page);
                     tmp = tmp.replace('%2%', data.totalPages);
-                    console.log(tmp);
                     setPaginationLabel(tmp);
                }
                if ((data.totalResults === 1 || data.totalResults === '1') && isScannerSearch) {
@@ -141,7 +139,7 @@ export const SearchResults = () => {
                     label = num + ' ' + getTermFromDictionary(language, 'result');
                }
                return (
-                    <Box bgColor={colorMode === 'light' ? theme['colors']['coolGray']['100'] : theme['colors']['coolGray']['700']} borderBottomWidth={1} borderColor={colorMode === 'light' ? theme['colors']['coolGray']['200'] : theme['colors']['gray']['600']}>
+                    <Box bgColor={colorMode === 'light' ? "$coolGray100" : "$coolGray700"} borderBottomWidth="$1" borderColor={colorMode === 'light' ? "$coolGray200" : "$warmGray600"}>
                          <Box m="$2">
                               <Text color={textColor}>{label}</Text>
                          </Box>
@@ -155,23 +153,22 @@ export const SearchResults = () => {
      const Paging = () => {
           if (data.totalPages > 1) {
                return (
-                    <Box p="$2" bgColor={colorMode === 'light' ? theme['colors']['coolGray']['100'] : theme['colors']['coolGray']['700']} borderTopWidth={1} borderColor={colorMode === 'light' ? theme['colors']['coolGray']['200'] : theme['colors']['gray']['600']} flexWrap="nowrap" alignItems="center">
+                    <Box p="$2" bgColor={colorMode === 'light' ? "$coolGray100" : "$coolGray700"} borderTopWidth="$1" borderColor={colorMode === 'light' ? "$coolGray200" : "$warmGray600"} flexWrap="nowrap" alignItems="center">
                          <ScrollView horizontal>
                               <ButtonGroup>
-                                   <Button onPress={() => setPage(page - 1)} isDisabled={page === 1} size="sm" bgColor={theme['colors']['primary']['500']}>
-                                        <ButtonText color={theme['colors']['primary']['500-text']}>{getTermFromDictionary(language, 'previous')}</ButtonText>
+                                   <Button onPress={() => setPage(page - 1)} isDisabled={page === 1} size="sm" bgColor={theme.tokens.colors.primary['500']}>
+                                        <ButtonText color={theme.tokens.colors.primary['500-text']}>{getTermFromDictionary(language, 'previous')}</ButtonText>
                                    </Button>
                                    <Button
-                                        bgColor={theme['colors']['primary']['500']}
+                                        bgColor={theme.tokens.colors.primary['500']}
                                         onPress={() => {
                                              if (!isPreviousData && data.hasMore) {
-                                                  console.log('Adding to page');
                                                   setPage(page + 1);
                                              }
                                         }}
                                         isDisabled={isPreviousData || !data.hasMore}
                                         size="sm">
-                                        <ButtonText color={theme['colors']['primary']['500-text']}>{getTermFromDictionary(language, 'next')}</ButtonText>
+                                        <ButtonText color={theme.tokens.colors.primary['500-text']}>{getTermFromDictionary(language, 'next')}</ButtonText>
                                    </Button>
                               </ButtonGroup>
                          </ScrollView>
@@ -221,8 +218,8 @@ export const SearchResults = () => {
                     loadError('Error', '')
                ) : (
                     <Box flex={1}>
-                         {data.totalResults > 0 ? <FilterBar /> : null}
-                         <SearchBox term={term} />
+                         {data.totalResults > 0 ? <FilterBar navigation={navigation} /> : null}
+                         <SearchBox term={term} navigation={navigation} />
                          <FlatList data={data.results} ListHeaderComponent={Header} ListFooterComponent={Paging} ListEmptyComponent={NoResults} renderItem={({ item }) => <DisplayResult data={item} />} keyExtractor={(item, index) => index.toString()} />
                     </Box>
                )}
@@ -236,7 +233,8 @@ const DisplayResult = (data) => {
      const { language } = React.useContext(LanguageContext);
      const { theme, textColor, colorMode } = React.useContext(ThemeContext);
      const { currentSource } = React.useContext(SearchContext);
-     const backgroundColor = useToken('colors', useColorModeValue('warmGray.200', 'coolGray.900'));
+     const backgroundColor = colorMode === 'light' ? "$warmGray200" : "$coolGray900";
+     const toast = useToast();
 
      const handlePressItem = () => {
           if (currentSource === 'events') {
@@ -278,8 +276,8 @@ const DisplayResult = (data) => {
           }
 
           return (
-               <Badge key={n.key} borderRadius="$sm" borderColor={theme['colors']['secondary']['400']} variant="outline" bg="transparent">
-                    <BadgeText textTransform="none" color={theme['colors']['secondary']['400']} fontSize="$xs">
+               <Badge key={n.key} borderRadius="$sm" borderColor={theme['tokens']['colors']['secondary']['400']} variant="outline" bg="transparent">
+                    <BadgeText textTransform="none" color={theme['tokens']['colors']['secondary']['400']} fontSize="$xs">
                          {n.name}
                     </BadgeText>
                </Badge>
@@ -297,9 +295,9 @@ const DisplayResult = (data) => {
           };
           await WebBrowser.openBrowserAsync(url, browserParams)
                .then((res) => {
-                    console.log(res);
+                    logDebugMessage(res);
                     if (res.type === 'cancel' || res.type === 'dismiss') {
-                         console.log('User closed or dismissed window.');
+                         logDebugMessage('User closed or dismissed window.');
                          WebBrowser.dismissBrowser();
                          WebBrowser.coolDownAsync();
                     }
@@ -311,20 +309,20 @@ const DisplayResult = (data) => {
                               WebBrowser.coolDownAsync();
                               await WebBrowser.openBrowserAsync(url, browserParams)
                                    .then((response) => {
-                                        console.log(response);
+                                        logDebugMessage(response);
                                         if (response.type === 'cancel') {
-                                             console.log('User closed window.');
+                                             logDebugMessage('User closed window.');
                                         }
                                    })
                                    .catch(async (error) => {
-                                        console.log('Unable to close previous browser session.');
+                                        logInfoMessage('Unable to close previous browser session.');
                                    });
                          } catch (error) {
-                              console.log('Really borked.');
+                              logErrorMessage('Really borked.');
                          }
                     } else {
-                         popToast(getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
-                         console.log(err);
+                         popToast(toast, getTermFromDictionary('en', 'error_no_open_resource'), getTermFromDictionary('en', 'error_device_block_browser'), 'error');
+                         logErrorMessage(err);
                     }
                });
      };
@@ -369,7 +367,7 @@ const DisplayResult = (data) => {
           let roomData = item?.room ?? null;
 
           return (
-               <Pressable borderBottomWidth={1} borderColor={colorMode === 'light' ? theme['colors']['warmGray']['400'] : theme['colors']['gray']['600']} pl="$4" pr="$5" py="$2" onPress={handlePressItem}>
+               <Pressable borderBottomWidth={1} borderColor={colorMode === 'light' ? "$warmGray400" : "$warmGray600"} pl="$4" pr="$5" py="$2" onPress={handlePressItem}>
                     <HStack space="md">
                          <VStack sx={{ '@base': { width: 100 }, '@lg': { width: 180 } }}>
                               <Box sx={{ '@base': { height: 150 }, '@lg': { height: 250 } }}>
@@ -379,7 +377,7 @@ const DisplayResult = (data) => {
                                         style={{
                                              width: '100%',
                                              height: '100%',
-                                             borderRadius: 4,
+                                             borderRadius: "$sm",
                                         }}
                                         placeholder={blurhash}
                                         transition={1000}
@@ -409,8 +407,8 @@ const DisplayResult = (data) => {
                               ) : null}
                               {registrationRequired ? (
                                    <HStack mt="$4" direction="row" space="xs" flexWrap="wrap">
-                                        <Badge key={0} borderRadius="$sm" borderColor={theme['colors']['secondary']['400']} variant="outline" bg="transparent">
-                                             <BadgeText textTransform="none" color={theme['colors']['secondary']['400']} fontSize="$xs">
+                                        <Badge key={0} borderRadius="$sm" borderColor={theme['tokens']['colors']['secondary']['400']} variant="outline" bg="transparent">
+                                             <BadgeText textTransform="none" color={theme['tokens']['colors']['secondary']['400']} fontSize="$xs">
                                                   {getTermFromDictionary(language, 'registration_required')}
                                              </BadgeText>
                                         </Badge>
@@ -423,7 +421,7 @@ const DisplayResult = (data) => {
      }
 
      return (
-          <Pressable borderBottomWidth={1} borderColor={colorMode === 'light' ? theme['colors']['warmGray']['400'] : theme['colors']['gray']['600']} pl="$4" pr="$5" py="$2" onPress={handlePressItem}>
+          <Pressable borderBottomWidth="$1" borderColor={colorMode === 'light' ? "$warmGray400" : "$warmGray600"} pl="$4" pr="$5" py="$2" onPress={handlePressItem}>
                <HStack space="md">
                     <VStack sx={{ '@base': { width: 100 }, '@lg': { width: 180 } }}>
                          <Box sx={{ '@base': { height: 150 }, '@lg': { height: 250 } }}>
@@ -433,7 +431,7 @@ const DisplayResult = (data) => {
                                    style={{
                                         width: '100%',
                                         height: '100%',
-                                        borderRadius: 4,
+                                        borderRadius: "$sm",
                                    }}
                                    placeholder={blurhash}
                                    transition={1000}
@@ -444,14 +442,14 @@ const DisplayResult = (data) => {
                               <Center
                                    mt="$1"
                                    sx={{
-                                        bgColor: colorMode === 'light' ? theme['colors']['warmGray']['200'] : theme['colors']['coolGray']['900'],
+                                        bgColor: colorMode === 'light' ? "$warmGray200" : "$coolGray900",
                                    }}>
                                    <Badge
                                         size="$sm"
                                         sx={{
-                                             bgColor: colorMode === 'light' ? theme['colors']['warmGray']['200'] : theme['colors']['coolGray']['900'],
+                                             bgColor: colorMode === 'light' ? "$warmGray200" : "$coolGray900",
                                         }}>
-                                        <BadgeText textTransform="none" color={colorMode === 'light' ? theme['colors']['coolGray']['600'] : theme['colors']['warmGray']['400']} sx={{ '@base': { fontSize: 10 }, '@lg': { fontSize: 16, padding: 4, textAlign: 'center' } }}>
+                                        <BadgeText textTransform="none" color={colorMode === 'light' ? "$coolGray600" : "$warmGray400"} sx={{ '@base': { fontSize: 10 }, '@lg': { fontSize: 16, padding: 4, textAlign: 'center' } }}>
                                              {item.language}
                                         </BadgeText>
                                    </Badge>
@@ -477,22 +475,24 @@ const DisplayResult = (data) => {
      );
 };
 
-const FilterBar = () => {
-     const navigation = useNavigation();
+const FilterBar = ({ navigation }) => {
      const { language } = React.useContext(LanguageContext);
      const { library } = React.useContext(LibrarySystemContext);
      const { theme, colorMode, textColor } = React.useContext(ThemeContext);
-     const version = formatDiscoveryVersion(library.discoveryVersion);
      const type = useRoute().params.type ?? 'catalog';
 
-     if (version >= '22.11.00' && type === 'catalog') {
+     if (navigation === undefined) {
+          logErrorMessage("Navigation is undefined in Filter Bar");
+          return null;
+     }
+     if (type === 'catalog') {
           return (
                <Box
                     padding="$2"
                     paddingBottom="$0"
                     sx={{
-                         bg: colorMode === 'light' ? theme['colors']['coolGray']['100'] : theme['colors']['coolGray']['700'],
-                         borderColor: colorMode === 'light' ? theme['colors']['coolGray']['200'] : theme['colors']['gray']['600'],
+                         bg: colorMode === 'light' ? "$coolGray100" : "$coolGray700",
+                         borderColor: colorMode === 'light' ? "$coolGray200" : "$warmGray600",
                     }}
                     flexWrap="nowrap">
                     <ScrollView horizontal>
@@ -500,7 +500,7 @@ const FilterBar = () => {
                               size="sm"
                               variant="solid"
                               mr="$1"
-                              bg={theme['colors']['primary']['600']}
+                              bg={theme.tokens.colors.primary['600']}
                               onPress={() => {
                                    navigation.push('modal', {
                                         screen: 'Filters',
@@ -509,21 +509,19 @@ const FilterBar = () => {
                                         },
                                    });
                               }}>
-                              <ButtonIcon color={theme['colors']['primary']['600-text']} as={SlidersHorizontalIcon} mr="$1" />
-                              <ButtonText color={theme['colors']['primary']['600-text']}>{getTermFromDictionary(language, 'filters')}</ButtonText>
+                              <ButtonIcon color={theme.tokens.colors.primary['600-text']} as={SlidersHorizontalIcon} mr="$1" />
+                              <ButtonText color={theme.tokens.colors.primary['600-text']}>{getTermFromDictionary(language, 'filters')}</ButtonText>
                          </Button>
-                         <CreateFilterButton />
+                         <CreateFilterButton navigation={navigation}/>
                     </ScrollView>
                </Box>
           );
      }
 };
 
-const SearchBox = (props) => {
-     const navigation = useNavigation();
-     const { term } = props;
+const SearchBox = ({term, navigation}) => {
      const { language } = React.useContext(LanguageContext);
-     const { theme, colorMode, textColor } = React.useContext(ThemeContext);
+     const { colorMode, textColor } = React.useContext(ThemeContext);
      const [searchTerm, setSearchTerm] = React.useState(term);
 
      const openScanner = async () => {
@@ -541,11 +539,11 @@ const SearchBox = (props) => {
 
      return (
          <Box padding="$2" sx={{
-              bg: colorMode === 'light' ? theme['colors']['coolGray']['100'] : theme['colors']['coolGray']['700'],
-              borderColor: colorMode === 'light' ? theme['colors']['coolGray']['200'] : theme['colors']['gray']['600'],
-         }} borderBottomWidth={1}>
+              bg: colorMode === 'light' ? "$coolGray100" : "$coolGray700",
+              borderColor: colorMode === 'light' ? "$coolGray200" : "$warmGray600",
+         }} borderBottomWidth="$1">
               <FormControl pb="$5">
-                   <Input borderColor={colorMode === 'light' ? theme['colors']['coolGray']['500'] : theme['colors']['gray']['300']}>
+                   <Input borderColor={colorMode === 'light' ? "$coolGray500" : "$warmGray300"}>
                         <InputSlot>
                              <InputIcon as={SearchIcon} ml="$2" color={textColor} />
                         </InputSlot>
@@ -564,8 +562,7 @@ const SearchBox = (props) => {
      )
 }
 
-const CreateFilterButtonDefaults = () => {
-     const navigation = useNavigation();
+const CreateFilterButtonDefaults = ({navigation}) => {
      const defaults = SearchGlobal.defaultFacets;
      const { location } = React.useContext(LibraryBranchContext);
      const { library } = React.useContext(LibrarySystemContext);
@@ -619,7 +616,7 @@ const CreateFilterButtonDefaults = () => {
                                    size="sm"
                                    variant="outline"
                                    sx={{
-                                        borderColor: colorMode === 'light' ? theme['colors']['muted']['300'] : theme['colors']['gray']['400'],
+                                        borderColor: colorMode === 'light' ? "$muted300" : "$warmGray400",
                                    }}
                                    onPress={() => {
                                         navigation.push('modal', {
@@ -645,7 +642,7 @@ const CreateFilterButtonDefaults = () => {
                               size="sm"
                               variant="outline"
                               sx={{
-                                   borderColor: colorMode === 'light' ? theme['colors']['primary']['400'] : theme['colors']['gray']['400'],
+                                   borderColor: colorMode === 'light' ? theme['tokens']['colors']['primary']['400'] : "$warmGray400",
                               }}
                               onPress={() => {
                                    navigation.push('modal', {
@@ -668,10 +665,9 @@ const CreateFilterButtonDefaults = () => {
      );
 };
 
-const CreateFilterButton = () => {
+const CreateFilterButton = ({navigation}) => {
      const { currentSource } = React.useContext(SearchContext);
      const { theme, colorMode, textColor } = React.useContext(ThemeContext);
-     const navigation = useNavigation();
      const appliedFacets = SearchGlobal.appliedFilters;
      const sort = _.find(appliedFacets['Sort By'], {
           field: 'sort_by',
@@ -702,7 +698,7 @@ const CreateFilterButton = () => {
                                    size="sm"
                                    key={index}
                                    sx={{
-                                        borderColor: colorMode === 'light' ? theme['colors']['muted']['300'] : theme['colors']['gray']['400'],
+                                        borderColor: colorMode === 'light' ? "$muted300" : "$warmGray400",
                                    }}
                                    onPress={() => {
                                         navigation.push('modal', {
@@ -727,7 +723,7 @@ const CreateFilterButton = () => {
           );
      }
 
-     return <CreateFilterButtonDefaults />;
+     return <CreateFilterButtonDefaults navigation={navigation} />;
 };
 
 async function fetchSearchResults(term, page, scope, url, type, id, language, index, source, barcodeType) {

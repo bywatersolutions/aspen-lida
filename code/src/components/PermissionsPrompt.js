@@ -6,7 +6,7 @@ import { getTermFromDictionary } from '../translations/TranslationService';
 
 export const PermissionsPrompt = (data) => {
      const { promptTitle, promptBody, setShouldRequestPermissions, updateStatus } = data;
-     const { textColor, theme, colorMode } = React.useContext(ThemeContext);
+     const { textColor, colorMode } = React.useContext(ThemeContext);
      const { language } = React.useContext(LanguageContext);
      const [isOpen, setIsOpen] = React.useState(true);
      const onClose = () => {
@@ -18,21 +18,21 @@ export const PermissionsPrompt = (data) => {
      return (
           <AlertDialog leastDestructiveRef={cancelRef} isOpen={isOpen} onClose={onClose}>
                <AlertDialogBackdrop />
-               <AlertDialogContent bgColor={colorMode === 'light' ? theme['colors']['warmGray']['50'] : theme['colors']['coolGray']['700']}>
+               <AlertDialogContent bgColor={colorMode === 'light' ? "$warmGray50" : "$coolGray700"}>
                     <AlertDialogHeader><Heading size="md" color={textColor}>{getTermFromDictionary(language, promptTitle)}</Heading></AlertDialogHeader>
                     <AlertDialogBody><Text color={textColor}>{getTermFromDictionary(language, promptBody)}</Text></AlertDialogBody>
                     <AlertDialogFooter>
                          <ButtonGroup space="md">
-                              <Button bgColor={theme['colors']['coolGray']['200']} onPress={onClose} ref={cancelRef}>
-                                   <ButtonText color={theme['colors']['coolGray']['800']}>{getTermFromDictionary(language, 'permissions_cancel')}</ButtonText>
+                              <Button bgColor={"$coolGray200"} onPress={onClose} ref={cancelRef}>
+                                   <ButtonText color={"$coolGray800"}>{getTermFromDictionary(language, 'permissions_cancel')}</ButtonText>
                               </Button>
                               <Button
-                                   bgColor={theme['colors']['danger']['700']}
+                                   bgColor="$error700"
                                    onPress={() => {
                                         onClose();
                                         Linking.openSettings();
                                    }}>
-                                   <ButtonText color={theme['colors']['white']}>{getTermFromDictionary(language, 'permissions_update_settings')}</ButtonText>
+                                   <ButtonText color="$white">{getTermFromDictionary(language, 'permissions_update_settings')}</ButtonText>
                               </Button>
                          </ButtonGroup>
                     </AlertDialogFooter>

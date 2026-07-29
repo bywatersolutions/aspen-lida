@@ -29,12 +29,12 @@ import {
      FormControlErrorText,
      CloseIcon,
      AlertCircleIcon,
-     Spinner
+     Spinner, useToast
 } from '@gluestack-ui/themed';
 
 import React from 'react';
 import { popAlert } from '../../components/loadError';
-import { AuthContext } from '../../components/navigation';
+import { AuthContext } from '../../context/AuthContext';
 import {
      BrowseCategoryContext,
      LanguageContext,
@@ -72,6 +72,7 @@ export const ResetExpiredPin = (props) => {
      const [pinConfirmed, setPinConfirmed] = React.useState('');
      const [errors, setErrors] = React.useState({});
      const [hasError, setHasError] = React.useState(false);
+     const toast = useToast();
 
      // show:hide data from password fields
      const [showPin, setShowPin] = React.useState(false);
@@ -134,14 +135,14 @@ export const ResetExpiredPin = (props) => {
                               setIsOpen(false);
                               setHasError(false);
                          } else {
-                              popAlert(getTermFromDictionary('en', 'error'), result.message ?? 'Unable to update pin', 'error');
+                              popAlert(toast, getTermFromDictionary('en', 'error'), result.message ?? 'Unable to update pin', 'error');
                          }
                     } else {
                          logDebugMessage("Error resetting expired pin");
                          logDebugMessage(result);
                          const error = getErrorMessage(result.code ?? 0, result.problem);
                          setHasError(true);
-                         popAlert(error.title, error.message, 'error');
+                         popAlert(toast, error.title, error.message, 'error');
                     }
                });
           } else {
@@ -182,7 +183,7 @@ export const ResetExpiredPin = (props) => {
           <Center>
                <AlertDialog leastDestructiveRef={cancelRef} isOpen={isOpen} onClose={onClose} avoidKeyboard>
                     <AlertDialogBackdrop />
-                    <AlertDialogContent bgColor={colorMode === 'light' ? theme['colors']['warmGray']['50'] : theme['colors']['coolGray']['700']}>
+                    <AlertDialogContent bgColor={colorMode === 'light' ? "$warmGray50" : "$coolGray700"}>
                          <AlertDialogHeader>
                               <Heading color={textColor}>{resetSuccessful ? getTermFromDictionary(language, 'pin_updated') : getTermFromDictionary(language, 'reset_my_pin')}</Heading>
                               <AlertDialogCloseButton>
@@ -195,7 +196,7 @@ export const ResetExpiredPin = (props) => {
                                         <Center>
                                              <VStack>
                                                   <Text color={textColor}>{resetMessage}. Logging you in...</Text>
-                                                  <Spinner color={theme['colors']['primary']['500']} />
+                                                  <Spinner color={theme.tokens.colors.primary['500']} />
                                              </VStack>
                                         </Center>
                                    </AlertDialogBody>
@@ -208,7 +209,7 @@ export const ResetExpiredPin = (props) => {
                                              <FormControlLabel>
                                                   <FormControlLabelText color={textColor}>{getTermFromDictionary(language, 'new_pin')}</FormControlLabelText>
                                              </FormControlLabel>
-                                             <Input borderColor={colorMode === 'light' ? theme['colors']['coolGray']['500'] : theme['colors']['gray']['300']}>
+                                             <Input borderColor={colorMode === 'light' ? "$coolGray500" : "$warmGray300"}>
                                                   <InputField
                                                        keyboardType={pinValidationRules.onlyDigitsAllowed === '1' ? 'numeric' : 'default'}
                                                        autoCapitalize="none"
@@ -238,7 +239,7 @@ export const ResetExpiredPin = (props) => {
                                              <FormControlLabel>
                                                   <FormControlLabelText color={textColor}>{getTermFromDictionary(language, 'new_pin_confirmed')}</FormControlLabelText>
                                              </FormControlLabel>
-                                             <Input borderColor={colorMode === 'light' ? theme['colors']['coolGray']['500'] : theme['colors']['gray']['300']}>
+                                             <Input borderColor={colorMode === 'light' ? "$coolGray500" : "$warmGray300"}>
                                                   <InputField
                                                        keyboardType={pinValidationRules.onlyDigitsAllowed === '1' ? 'numeric' : 'default'}
                                                        autoCapitalize="none"
@@ -268,11 +269,11 @@ export const ResetExpiredPin = (props) => {
 
                                    <AlertDialogFooter>
                                         <ButtonGroup space="$3">
-                                             <Button variant="outline" onPress={onClose} borderColor={theme['colors']['primary']['500']}>
-                                                  <ButtonText color={theme['colors']['primary']['500']}>{getTermFromDictionary(language, 'cancel')}</ButtonText>
+                                             <Button variant="outline" onPress={onClose} borderColor={theme.tokens.colors.primary['500']}>
+                                                  <ButtonText color={theme.tokens.colors.primary['500']}>{getTermFromDictionary(language, 'cancel')}</ButtonText>
                                              </Button>
-                                             <Button bgColor={theme['colors']['primary']['500']} onPress={() => updatePIN()}>
-                                                  <ButtonText color={theme['colors']['primary']['500-text']}>{getTermFromDictionary(language, 'update')}</ButtonText>
+                                             <Button bgColor={theme.tokens.colors.primary['500']} onPress={() => updatePIN()}>
+                                                  <ButtonText color={theme.tokens.colors.primary['500-text']}>{getTermFromDictionary(language, 'update')}</ButtonText>
                                              </Button>
                                         </ButtonGroup>
                                    </AlertDialogFooter>

@@ -3,7 +3,7 @@ import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import _ from 'lodash';
 import moment from 'moment';
-import { Badge, BadgeText, Box, Center, ChevronDownIcon, FlatList, Heading, HStack, Pressable, ScrollView, Select, SelectBackdrop, SelectContent, SelectDragIndicator, SelectDragIndicatorWrapper, SelectIcon, SelectInput, SelectItem, SelectPortal, SelectTrigger, Text, VStack, ButtonGroup, Button, ButtonText } from '@gluestack-ui/themed';
+import { Badge, BadgeText, Box, Center, ChevronDownIcon, FlatList, Heading, HStack, Pressable, ScrollView, Select, SelectBackdrop, SelectContent, SelectDragIndicator, SelectDragIndicatorWrapper, SelectIcon, SelectInput, SelectItem, SelectPortal, SelectScrollView, SelectTrigger, Text, VStack, ButtonGroup, Button, ButtonText } from '@gluestack-ui/themed';
 import React from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -160,7 +160,7 @@ export const MyLists = () => {
      });
 
      useQueries({
-          queries: sortedLists?.map((list) => {
+          queries: (sortedLists ?? []).map((list) => {
                return {
                     queryKey: ['list', list.id, user.id],
                     queryFn: () => getListTitles(list.id, library.baseUrl, 1, 25, 25, 'dateAdded'),
@@ -169,7 +169,7 @@ export const MyLists = () => {
      });
 
      useQueries({
-          queries: sortedLists?.map((list) => {
+          queries: (sortedLists ?? []).map((list) => {
                return {
                     queryKey: ['list-details', list.id, user.id],
                     queryFn: () => getListDetails(list.id, library.baseUrl),
@@ -282,7 +282,7 @@ export const MyLists = () => {
                                         style={{
                                              width: 100,
                                              height: 150,
-                                             borderRadius: 4,
+                                             borderRadius: "$sm",
                                         }}
                                         placeholder={blurhash}
                                         transition={1000}
@@ -333,24 +333,24 @@ export const MyLists = () => {
                <Box
                     p="$2"
                     borderTopWidth="$1"
-                    bgColor={colorMode === 'light' ? theme['colors']['coolGray']['100'] : theme['colors']['coolGray']['700']}
-                    borderColor={colorMode === 'light' ? theme['colors']['coolGray']['400'] : theme['colors']['gray']['600']}
+                    bgColor={colorMode === 'light' ? "$coolGray100" : "$coolGray700"}
+                    borderColor={colorMode === 'light' ? "$coolGray400" : "$warmGray600"}
                     flexWrap="nowrap"
                     alignItems="center">
                     <ScrollView horizontal>
                          <ButtonGroup size="sm">
                               <Button
-                                   bgColor={theme['colors']['primary']['500']}
+                                   bgColor={theme.tokens.colors.primary['500']}
                                    onPress={async () => {
                                         if (page > 1) {
                                              updatePage(page - 1, type);
                                         }
                                    }}
                                    isDisabled={page === 1}>
-                                   <ButtonText color={theme['colors']['primary']['500-text']} >{getTermFromDictionary(language, 'previous')}</ButtonText>
+                                   <ButtonText color={theme.tokens.colors.primary['500-text']} >{getTermFromDictionary(language, 'previous')}</ButtonText>
                               </Button>
                               <Button
-                                   bgColor={theme['colors']['primary']['500']}
+                                   bgColor={theme.tokens.colors.primary['500']}
                                    onPress={async () => {
                                         if ($type?.page_current !== $type?.page_total) {
                                              logDebugMessage('Adding to page');
@@ -359,7 +359,7 @@ export const MyLists = () => {
                                         }
                                    }}
                                    isDisabled={!($type?.page_current !== $type?.page_total)}>
-                                   <ButtonText color={theme['colors']['primary']['500-text']} >{getTermFromDictionary(language, 'next')}</ButtonText>
+                                   <ButtonText color={theme.tokens.colors.primary['500-text']} >{getTermFromDictionary(language, 'next')}</ButtonText>
                               </Button>
                          </ButtonGroup>
                     </ScrollView>
@@ -392,26 +392,28 @@ export const MyLists = () => {
                                    {currentListGroup && currentListGroup !== '-1' && currentListGroup !== -1 ? (
                                         _.map(Object.values(listGroups.groups), function (group, selectedIndex, array) {
                                              if (group.id === currentListGroup) {
-                                                  return <SelectInput value={group.title} color={textColor} />;
+                                                  return <SelectInput py={0} value={group.title} color={textColor} />;
                                              }
                                         })
                                    ) : currentListGroup == '-1' ? (
-                                        <SelectInput value={getTermFromDictionary(language, 'unassigned_lists')} color={textColor} />
+                                        <SelectInput py={0} value={getTermFromDictionary(language, 'unassigned_lists')} color={textColor} />
                                    ) : defaultListGroup ? (
-                                        <SelectInput value={defaultListGroup} color={textColor} />
+                                        <SelectInput py={0} value={defaultListGroup} color={textColor} />
                                    ) : null}
                                    <SelectIcon mr="$3" as={ChevronDownIcon} color={textColor} />
                               </SelectTrigger>
                               <SelectPortal>
                                    <SelectBackdrop />
-                                   <SelectContent bgColor={colorMode === 'light' ? theme['colors']['warmGray']['50'] : theme['colors']['coolGray']['700']} pb={Platform.OS === 'android' ? insets.bottom + 16 : '$4'}>
+                                   <SelectContent bgColor={colorMode === 'light' ? "$warmGray50" : "$coolGray700"} pb={Platform.OS === 'android' ? insets.bottom + 16 : '$4'}>
                                         <SelectDragIndicatorWrapper>
                                              <SelectDragIndicator />
                                         </SelectDragIndicatorWrapper>
-                                        {_.map(Object.values(listGroups.groups), function (item, index, array) {
-                                             return <SelectItem key={index} value={item.id} label={item.title} bgColor={currentListGroup === item.id ? theme['colors']['tertiary']['300'] : ''} sx={{ _text: { color: currentListGroup === item.id ? theme['colors']['tertiary']['500-text'] : textColor } }} />;
-                                        })}
-                                        {listGroups.unassigned > 0 ? <SelectItem key={-1} value="-1" label={getTermFromDictionary(language, 'unassigned_lists')} bgColor={currentListGroup == '-1' ? theme['colors']['tertiary']['300'] : ''} sx={{ _text: { color: currentListGroup == '-1' ? theme['colors']['tertiary']['500-text'] : textColor } }} /> : null}
+                                        <SelectScrollView>
+                                             {_.map(Object.values(listGroups.groups), function (item, index, array) {
+                                                  return <SelectItem key={index} value={item.id} label={item.title} bgColor={currentListGroup === item.id ? theme.tokens.colors.tertiary['300'] : ''} sx={{ _text: { color: currentListGroup === item.id ? theme.tokens.colors.tertiary['500-text'] : textColor } }} />;
+                                             })}
+                                             {listGroups.unassigned > 0 ? <SelectItem key={-1} value="-1" label={getTermFromDictionary(language, 'unassigned_lists')} bgColor={currentListGroup == '-1' ? theme.tokens.colors.tertiary['300'] : ''} sx={{ _text: { color: currentListGroup == '-1' ? theme.tokens.colors.tertiary['500-text'] : textColor } }} /> : null}
+                                        </SelectScrollView>
                                    </SelectContent>
                               </SelectPortal>
                          </Select>
