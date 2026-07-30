@@ -69,7 +69,7 @@ const app_config = {
      owner: owner['expoProjectOwner'],
      platforms: ['ios', 'android'],
      version: version['version'],
-     sdkVersion: '53.0.0',
+     sdkVersion: '54.0.0',
      newArchEnabled: false,
      userInterfaceStyle: 'automatic',
      orientation: 'default',
