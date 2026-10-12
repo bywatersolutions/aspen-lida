@@ -6,7 +6,6 @@ import * as Device from 'expo-device';
 import { createChannelsAndCategories, registerForPushNotificationsAsync } from '../components/Notifications';
 import { deletePushToken, getNotificationPreferences, savePushToken, setNotificationPreference } from '../util/api/user';
 import {logSentryMessage, logDebugMessage, logWarnMessage} from '../util/logging';
-import {useToast} from "@gluestack-ui/themed";
 
 // Configure default notification behavior
 Notifications.setNotificationHandler({
@@ -22,7 +21,6 @@ export const useNotificationPermissions = (library, updateExpoToken, updateUserD
      const [isLoading, setLoading] = React.useState(false);
      const appState = React.useRef(AppState.currentState);
      const lastCheckedStatus = React.useRef(false);
-     const toast = useToast();
 
      const pendingPromise = React.useRef(null);
      const checkAndUpdatePermissions = async (source, force = false) => {
@@ -52,7 +50,7 @@ export const useNotificationPermissions = (library, updateExpoToken, updateUserD
                     }
                     return isGranted;
                } catch (error) {
-                  logSentryMessage('Error checking permissions:', error);
+                  logSentryMessage('Error checking permissions:', 'error', error);
                   return false;
                }
           };
@@ -135,7 +133,7 @@ export const useNotificationPermissions = (library, updateExpoToken, updateUserD
                }
                return false;
           } catch (error) {
-               logSentryMessage('Error adding notification permissions:', error);
+               logSentryMessage('Error adding notification permissions:', 'error', error);
                return false;
           } finally {
                setLoading(false);
@@ -159,9 +157,9 @@ export const useNotificationPermissions = (library, updateExpoToken, updateUserD
                 await deletePushToken(library.baseUrl, tokenData.data);
 
                 // Clear preferences
-                await setNotificationPreference(toast, library.baseUrl, tokenData.data, 'notifySavedSearch', false, false);
-                await setNotificationPreference(toast, library.baseUrl, tokenData.data, 'notifyCustom', false, false);
-                await setNotificationPreference(toast, library.baseUrl, tokenData.data, 'notifyAccount', false, false);
+                await setNotificationPreference(library.baseUrl, tokenData.data, 'notifySavedSearch', false, false);
+                await setNotificationPreference(library.baseUrl, tokenData.data, 'notifyCustom', false, false);
+                await setNotificationPreference(library.baseUrl, tokenData.data, 'notifyAccount', false, false);
             }
 
             // Update local state
@@ -178,12 +176,12 @@ export const useNotificationPermissions = (library, updateExpoToken, updateUserD
                     // Try to open app settings directly first
                     await Linking.openSettings();
                 } catch (err) {
-                     logSentryMessage('Error opening Android settings:', err);
+                     logSentryMessage('Error opening Android settings:', 'error', err);
                     // If that fails, try opening through the system settings
                     try {
                         await Linking.openURL('android-settings://');
                     } catch (secondErr) {
-                         logSentryMessage('Failed to open settings through alternative method:', secondErr);
+                         logSentryMessage('Failed to open settings through alternative method:', 'error', secondErr);
                     }
                 }
             } else if (Platform.OS === 'ios') {
@@ -202,7 +200,7 @@ export const useNotificationPermissions = (library, updateExpoToken, updateUserD
                 }
             });
         } catch (error) {
-            logSentryMessage('Error revoking notification permissions:', error);
+            logSentryMessage('Error revoking notification permissions:', 'error', error);
             await checkAndUpdatePermissions('revoke notifications error', true);
         } finally {
             setLoading(false);
@@ -231,7 +229,7 @@ export const useNotificationPermissions = (library, updateExpoToken, updateUserD
     };
 };
 
-export const useNotificationPreferences = (toast, library, expoToken) => {
+export const useNotificationPreferences = (library, expoToken) => {
      const [preferences, setPreferences] = React.useState({
           notifySavedSearch: false,
           notifyCustom: false,
@@ -250,11 +248,11 @@ export const useNotificationPreferences = (toast, library, expoToken) => {
                }
                if (optionChanged) {
                     logDebugMessage("Changing notification preference for " + option);
-                    await setNotificationPreference(toast, library.baseUrl, expoToken, option, value);
+                    await setNotificationPreference(library.baseUrl, expoToken, option, value);
                     setPreferences(prev => ({...prev, [option]: value}));
                }
           } catch (error) {
-               logSentryMessage(`Error updating ${option} preference:`, error);
+               logSentryMessage(`Error updating ${option} preference:`, 'error', error);
           }
      };
 
@@ -262,7 +260,7 @@ export const useNotificationPreferences = (toast, library, expoToken) => {
           try {
                const tokenToUse = overrideToken || expoToken;
                logDebugMessage("Loading preferences for expoToken " + tokenToUse);
-               const preferences = await getNotificationPreferences(toast, library.baseUrl, tokenToUse);
+               const preferences = await getNotificationPreferences(library.baseUrl, tokenToUse);
                if (preferences !== false) {
                     logDebugMessage(preferences);
                     setPreferences({
@@ -274,7 +272,7 @@ export const useNotificationPreferences = (toast, library, expoToken) => {
                     logWarnMessage("Did not get preferences for the expoToken");
                }
           } catch (error) {
-               logSentryMessage('Error loading notification preferences:', error);
+               logSentryMessage('Error loading notification preferences:', 'error', error);
           }
      };
 

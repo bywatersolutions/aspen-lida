@@ -1,5 +1,5 @@
 import { logDebugMessage, logErrorMessage, logInfoMessage, logWarnMessage } from '../util/logging';
-import { LIBRARY, LOGIN_DATA, PATRON, GLOBALS } from '../util/globals';
+import { LIBRARY, LOGIN_DATA, GLOBALS } from '../util/globals';
 import { decode } from 'html-entities';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,7 +17,7 @@ import chroma from 'chroma-js';
 export function formatDiscoveryVersion(payload) {
      if (payload === undefined) {
           // skip trying to parse the version if it is undefined
-          logWarnMessage('Could not load discovery version, the version was undefined. Something is wrong.');
+          logDebugMessage('Could not load discovery version, the version was undefined. Something is wrong.');
           return LIBRARY.version ?? 'Unknown';
      }
      try {
@@ -37,8 +37,21 @@ export function formatDiscoveryVersion(payload) {
 
 /**
  * Logout the user and clean up data
+ * @param {object} queryClient - React Query client for invalidating queries
+ * @param {boolean} preserveUsername - If true, keeps @userBarcode for convenience on login screen
  **/
-export async function RemoveData(queryClient, updateUser) {
+export async function RemoveData(queryClient, preserveUsername = true) {
+     let savedUsername = null;
+
+     // Preserve username for user convenience on next login
+     if (preserveUsername) {
+          try {
+               savedUsername = await AsyncStorage.getItem('@userBarcode');
+          } catch (e) {
+               logWarnMessage('Failed to read @userBarcode before logout');
+          }
+     }
+
      try {
           logDebugMessage('Removing Data in secure storage');
           SecureStore.deleteItemAsync('patronName');
@@ -53,50 +66,26 @@ export async function RemoveData(queryClient, updateUser) {
           SecureStore.deleteItemAsync('userToken');
           SecureStore.deleteItemAsync('logo');
           SecureStore.deleteItemAsync('favicon');
+
           logDebugMessage('Removing Data in async storage');
           await AsyncStorage.removeItem('@userToken');
           await AsyncStorage.removeItem('@patronProfile');
           await AsyncStorage.removeItem('@libraryInfo');
           await AsyncStorage.removeItem('@locationInfo');
           await AsyncStorage.removeItem('@pathUrl');
-          logDebugMessage('Invalidating Queries');
      } catch (e) {
           logErrorMessage('Error clearing storage');
           logErrorMessage(e);
      }
 
      logDebugMessage('Clearing Context information');
+     // Keep LIBRARY global clear for backwards compatibility
      LIBRARY.url = null;
      LIBRARY.name = null;
      LIBRARY.favicon = null;
      LIBRARY.version = GLOBALS.appVersion;
      LIBRARY.languages = [];
      LIBRARY.localIll = [];
-     PATRON.userToken = null;
-     PATRON.scope = null;
-     PATRON.library = null;
-     PATRON.location = null;
-     PATRON.listLastUsed = null;
-     PATRON.fines = 0;
-     PATRON.messages = [];
-     PATRON.num.checkedOut = 0;
-     PATRON.num.holds = 0;
-     PATRON.num.lists = 0;
-     PATRON.num.overdue = 0;
-     PATRON.num.ready = 0;
-     PATRON.num.savedSearches = 0;
-     PATRON.num.updatedSearches = 0;
-     PATRON.promptForOverdriveEmail = 1;
-     PATRON.rememberHoldPickupLocation = 0;
-     PATRON.pickupLocations = [];
-     PATRON.sublocations = [];
-     PATRON.language = 'en';
-     PATRON.hideSoftDeleteListUI = false;
-     PATRON.coords.lat = 0;
-     PATRON.coords.long = 0;
-     PATRON.linkedAccounts = [];
-     PATRON.holds = [];
-     PATRON.checkouts = [];
      LOGIN_DATA.showSelectLibrary = true;
      LOGIN_DATA.runGreenhouse = true;
      LOGIN_DATA.num = 0;
@@ -115,13 +104,25 @@ export async function RemoveData(queryClient, updateUser) {
           logErrorMessage('Error invalidating all queries');
           logErrorMessage(e);
      }
+
      try {
-          if (updateUser !== null) {
-               updateUser({});
-          }
+          const { clearSessionContext } = require('../util/db');
+          clearSessionContext();
+          logDebugMessage('Cleared current user/location/library session context');
      } catch (e) {
-          logErrorMessage('Error clearing user');
+          logErrorMessage('Error clearing session context');
           logErrorMessage(e);
+     }
+
+     // Restore username if it was preserved for user convenience
+     if (preserveUsername && savedUsername) {
+          try {
+               await AsyncStorage.setItem('@userBarcode', savedUsername);
+               logDebugMessage('Preserved username for next login');
+          } catch (e) {
+               logWarnMessage('Failed to preserve username for next login');
+               logErrorMessage(e);
+          }
      }
 
      logDebugMessage('Storage data cleansed.');
@@ -164,6 +165,30 @@ export function stripHTML(string) {
 }
 
 /**
+ * Normalize arbitrary text for display by optionally stripping HTML,
+ * collapsing whitespace, and trimming leading/trailing spaces.
+ */
+export function normalizeDisplayText(value, options = {}) {
+     const { stripHtml = true, collapseWhitespace = true, trim = true } = options;
+
+     let output = String(value ?? '');
+
+     if (stripHtml) {
+          output = stripHTML(output);
+     }
+
+     if (collapseWhitespace) {
+          output = output.replace(/\s+/g, ' ');
+     }
+
+     if (trim) {
+          output = output.trim();
+     }
+
+     return output;
+}
+
+/**
  * Decode HTML entities in a string
  **/
 export function decodeHTML(string) {
@@ -183,6 +208,27 @@ export function toArray(values) {
      if (Array.isArray(values)) return values;
      if (values && typeof values === 'object') return Object.values(values);
      return [values];
+}
+
+/**
+ * Returns true when the value is a non-null object and not an array.
+ */
+export function isPlainObject(value) {
+     return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/**
+ * Truncate a string to a maximum length, appending an omission suffix if truncated.
+ * Mirrors lodash _.truncate behaviour: the omission counts toward maxLength.
+ * @param {string|null|undefined} str
+ * @param {number} maxLength
+ * @param {string} omission
+ * @returns {string}
+ */
+export function truncate(str, maxLength, omission = '...') {
+     if (str == null) return '';
+     if (str.length <= maxLength) return str;
+     return str.slice(0, maxLength - omission.length) + omission;
 }
 
 /**
@@ -251,6 +297,20 @@ export function orderByFields(items, iteratees = [], orders = []) {
  * Manipulate and format dates (replacing moment.js)
  ******************************************************************* **/
 /**
+ * Format a Unix timestamp (seconds) to a "MMM D, YYYY" string, e.g. "Jan 4, 2024".
+ * Returns an empty string for falsy or invalid input.
+ * @param {number|string} unixTimestamp - Unix timestamp in seconds
+ * @returns {string}
+ */
+export function formatUnixDate(unixTimestamp) {
+     if (!unixTimestamp) return '';
+     const date = new Date(Number(unixTimestamp) * 1000);
+     if (isNaN(date.getTime())) return '';
+     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+     return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
+
+/**
  * Format a date as a local YYYY-MM-DD string, ensuring that the month and day are zero-padded to two digits.
  * @param date
  * @returns {string}
@@ -316,15 +376,9 @@ export function generateSwatches(swatch) {
                return saturationDelta >= 0 ? color.saturate(saturationDelta) : color.desaturate(saturationDelta * -1);
           });
 
-     const colorsHueUp = colors.map((color, i) => {
-          const hueDelta = HUE_MAP[i] - HUE_MAP[baseColorIndex];
-          return hueDelta >= 0 ? color.set('hsl.h', `+${hueDelta}`) : color.set('hsl.h', `+${(hueDelta * -1) / 2}`);
-     });
-
-     const colorsHueDown = colors.map((color, i) => {
-          const hueDelta = HUE_MAP[i] - HUE_MAP[baseColorIndex];
-          return hueDelta >= 0 ? color.set('hsl.h', `-${hueDelta}`) : color.set('hsl.h', `-${(hueDelta * -1) / 2}`);
-     });
+     const rawApiColor = chroma(primaryColor);
+     const BASE_500_INDEX = 5;
+     colors[BASE_500_INDEX] = rawApiColor;
 
      const object = {};
      let baseColor;
@@ -350,17 +404,54 @@ export function generateSwatches(swatch) {
      return object;
 }
 
+/**
+ * Build a gluestack-v1 swatch object from an AspenLiDA theme color group ({lighter, base, darker, text}),
+ * using the provided values as-is for the 300/500/700 shades instead of deriving them, so branded colors
+ * are reproduced exactly. Shades the API doesn't provide (50/100/200/400/600/800/900) are filled in from
+ * a chroma-interpolated scaffold based on the base color, so the swatch is still complete.
+ * @param colorGroup
+ * @returns {{}}
+ */
+export function buildSwatchFromThemeTokens(colorGroup = {}) {
+     const { lighter, base, darker, text } = colorGroup ?? {};
+     const swatch = generateSwatches(base ?? '#3dbdd6');
+
+     if (base) {
+          swatch['500'] = base;
+          swatch.base = base;
+     }
+     if (lighter) {
+          swatch['300'] = lighter;
+     }
+     if (darker) {
+          swatch['700'] = darker;
+     }
+     if (text) {
+          swatch['300-text'] = text;
+          swatch['500-text'] = text;
+          swatch['700-text'] = text;
+          swatch.baseContrast = text;
+     }
+
+     return swatch;
+}
+
 export const getColorNumber = (index) => (index === 0 ? 50 : index * 100);
 
 export const getContrastText = (color) => {
+     const WCAG_AA_THRESHOLD = 4.5; // WCAG AA minimum for normal text
      let ratioOnWhite = chroma.contrast(color, '#ffffff');
      let ratioOnBlack = chroma.contrast(color, '#000000');
 
-     if (ratioOnBlack > ratioOnWhite) {
+     if (ratioOnBlack >= WCAG_AA_THRESHOLD) {
           return '#000000';
-     } else {
+     }
+
+     if (ratioOnWhite >= WCAG_AA_THRESHOLD) {
           return '#ffffff';
      }
+
+     return ratioOnBlack > ratioOnWhite ? '#000000' : '#ffffff';
 };
 
 /** *******************************************************************
@@ -405,5 +496,68 @@ export function problemCodeMap(code) {
                };
           default:
                return null;
+     }
+}
+
+/**
+ * Convert a value to a number if possible, returning null for null, undefined, or non-finite values.
+ * This is useful for handling optional numeric fields where a missing value should be treated as "unset" rather than 0.
+ * @param {*} value - The value to convert to a number
+ * @returns {number|null}
+ */
+export function numberOrNull(value) {
+     if (value == null) return null;
+     const num = Number(value);
+     return Number.isFinite(num) ? num : null;
+}
+
+/**
+ * Convert an integer value to a boolean, returning true for 1, false for 0, and null for any other value.
+ * @param value
+ * @returns {null|boolean}
+ */
+export function intToBool(value) {
+     if (value === 1) return true;
+     if (value === 0) return false;
+     return null;
+}
+
+/**
+ * Convert a boolean or boolean-like value to an integer, returning 1 for true, 0 for false, and null for any other value.
+ * @param value
+ * @returns {number|number|null}
+ */
+export function boolToInt(value) {
+     if (typeof value === 'boolean') return value ? 1 : 0;
+     if (value === 1 || value === '1' || value === 'true') return 1;
+     if (value === 0 || value === '0' || value === 'false') return 0;
+     return null;
+}
+
+/**
+ * Safely parse a JSON string, returning the parsed object or null if parsing fails or the input is not a string.
+ * @param json
+ * @returns {any|null}
+ */
+export function safeParse(json) {
+     if (!json || typeof json !== 'string') return null;
+     try {
+          return JSON.parse(json);
+     } catch {
+          return null;
+     }
+}
+
+/**
+ * Safely stringify a value to JSON, returning null if the value is undefined or cannot be stringified.
+ * @param raw
+ * @returns {number|null}
+ */
+export function parseStoredNumber(raw) {
+     if (raw == null) return null;
+     try {
+          return numberOrNull(JSON.parse(raw));
+     } catch {
+          return numberOrNull(raw);
      }
 }
