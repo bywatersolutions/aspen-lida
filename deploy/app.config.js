@@ -215,16 +215,16 @@ module.exports = () => {
               [
                  'expo-web-browser'
               ],
-               'expo-image',
-               'expo-sharing',
-               '@react-native-community/datetimepicker',
-               [
-                    "expo-maps",
-                    {
+              'expo-image',
+              'expo-sharing',
+              '@react-native-community/datetimepicker',
+              [
+                   "expo-maps",
+                   {
                          "requestLocationPermission": true,
                          "locationPermission": "Allow this app to use your location to find nearby libraries"
-                    }
-               ]
+                   }
+              ]
          ],
      };
      return config;
