@@ -1,6 +1,6 @@
 {
   "cli": {
-	"version": "20.1.0",
+	"version": ">=20.1.0",
   "appVersionSource": "local"
   },
   "build": {
@@ -39,6 +39,7 @@
 	  "channel": "development",
 	  "developmentClient": true,
 	  "distribution": "internal",
+	  "node": "22.14.0",
 	  "ios": {
 		"simulator": true,
 		"resourceClass": "medium"
