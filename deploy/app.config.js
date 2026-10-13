@@ -80,7 +80,8 @@ module.exports = () => {
          owner: "bywater-solutions",
          platforms: ['ios', 'android'],
          version: version['version'],
-         newArchEnabled: true,
+         newArchEnabled: false,
+         sdkVersion: '55.0.0',
          userInterfaceStyle: 'automatic',
          orientation: 'default',
          icon: generated('appIcon.png'),
@@ -180,6 +181,8 @@ module.exports = () => {
               'expo-secure-store',
               'expo-localization',
               'expo-notifications',
+              'expo-sqlite',
+              'expo-font',
               [
                    'expo-location',
                    {
@@ -200,9 +203,9 @@ module.exports = () => {
                    'expo-build-properties',
                    {
                         android: {
-                             compileSdkVersion: 35,
-                             targetSdkVersion: 35,
-                             buildToolsVersion: '35.0.0',
+                             compileSdkVersion: 36,
+                             targetSdkVersion: 36,
+                             buildToolsVersion: '36.0.0',
                         },
                         ios: {
                              deploymentTarget: '15.1',
@@ -211,6 +214,16 @@ module.exports = () => {
               ],
               [
                  'expo-web-browser'
+              ],
+              'expo-image',
+              'expo-sharing',
+              '@react-native-community/datetimepicker',
+              [
+                   "expo-maps",
+                   {
+                         "requestLocationPermission": true,
+                         "locationPermission": "Allow this app to use your location to find nearby libraries"
+                   }
               ]
          ],
      };

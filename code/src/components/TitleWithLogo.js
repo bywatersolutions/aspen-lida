@@ -1,21 +1,47 @@
 import React from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { LibrarySystemContext, ThemeContext } from '../context/initialContext';
-import { View, Image, Text, useColorMode, HStack, VStack, Box, Pressable, Icon, ChevronLeftIcon } from '@gluestack-ui/themed';
+
+import { useLibrary } from '../hooks/useLibrarySystemData';
+import { View, Image, Text, HStack, VStack, Box, Pressable, Icon, ChevronLeftIcon } from '@gluestack-ui/themed';
 import { Platform, useWindowDimensions } from 'react-native';
-import { decodeHTML } from '../helpers/helpers';
+import { decodeHTML, isValidUrl } from '../helpers/helpers';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../themes/theme';
 
 const HeaderLogoBar = (props) => {
-     const { theme, colorMode } = React.useContext(ThemeContext);
-     const { library } = React.useContext(LibrarySystemContext);
+     const { theme, colorMode, header } = useTheme();
+     const library = useLibrary();
      const { width, height } = useWindowDimensions();
 
-     if (library.headerLogoApp){
+     // Prefer the active theme's header data (logo/backgroundColor/alignment) when the
+     // theme catalog actually provides a logo; otherwise fall back to the library's
+     // headerLogo* app settings for backwards compatibility.
+     if (header?.logo) {
+          const localBrandingLogoUri = isValidUrl(header.logo) ? header.logo : library.baseUrl + '/files/original/' + header.logo;
+          const backgroundColor = header.backgroundColor ?? '#FFFFFF';
+          let headerLogoAlignment = 'center';
+          if (header.alignment == 1) {
+               headerLogoAlignment = 'flex-start';
+          } else if (header.alignment == 3) {
+               headerLogoAlignment = 'flex-end';
+          }
+
+          const originalHeight = library.headerLogoHeight ?? 200;
+          const originalWidth = library.headerLogoWidth ?? 1536;
+
+          const dims = logoSize(width, 50, originalWidth, originalHeight);
+
+          return (
+               <HStack backgroundColor={backgroundColor} safeAreaTop='1' safeAreaBottom='1' justifyContent={headerLogoAlignment} flexDirection='row' height={dims.height}>
+                         <Image source={{uri: localBrandingLogoUri}} alt={library.displayName ?? ''} placeholder="" width={dims.width} height={dims.height} resizeMode='contain' />
+               </HStack>
+          );
+     }
+
+     if (library?.headerLogoApp){
           const localBrandingLogoUri = library.headerLogoApp;
 
           //Assume an image that is 1536 x 200
-          const colorMode = useColorMode();
           let backgroundColor = '#FFFFFF';
           if (library.headerLogoBackgroundColorApp !== undefined) {
                backgroundColor = library.headerLogoBackgroundColorApp;
@@ -41,7 +67,7 @@ const HeaderLogoBar = (props) => {
 
           return (
                <HStack backgroundColor={backgroundColor} safeAreaTop='1' safeAreaBottom='1' justifyContent={headerLogoAlignment} flexDirection='row' height={scaledImageHeight}>
-                         <Image source={{uri: localBrandingLogoUri}} alt={library.displayName} placeholder="" width={scaledImageWidth} height={scaledImageHeight} resizeMode='contain' />
+                         <Image source={{uri: localBrandingLogoUri}} alt={library.displayName ?? ''} placeholder="" width={scaledImageWidth} height={scaledImageHeight} resizeMode='contain' />
                </HStack>
           );
      }else{
@@ -50,7 +76,7 @@ const HeaderLogoBar = (props) => {
 };
 
 export default function TitleWithLogo(props) {
-     const { theme } = React.useContext(ThemeContext);
+     const { theme } = useTheme();
      const navigation = useNavigation();
      const hideBack = props.hideBack ?? false;
      const insets = useSafeAreaInsets();
@@ -60,13 +86,13 @@ export default function TitleWithLogo(props) {
                <HeaderLogoBar />
                <HStack px="$1" py="$2" alignItems="left" justifyContent="space-between" backgroundColor={theme['tokens']['colors']['primary']['base']}>
                     {navigation.canGoBack() && !hideBack ? (
-                       <Pressable onPress={() => navigation.goBack()} p="$1" pl="$1">
+                       <Pressable onPress={() => navigation.goBack()} pl="$1">
                             <Icon as={ChevronLeftIcon} size="xl" color={theme['tokens']['colors']['primary']['baseContrast']} />
                        </Pressable>
                     ) : (
                        <Box width="$6" />
                     )}
-                    <Text flex={1} textAlign="left" color={theme['tokens']['colors']['primary']['baseContrast']} size="lg" lineHeight="$lg" fontWeight="bold" numberOfLines={1} ellipsizeMode="tail">{decodeHTML(props.title)}</Text>
+                    <Text pl="$2" flex={1} textAlign="left" color={theme['tokens']['colors']['primary']['baseContrast']} size="lg" lineHeight="$lg" fontWeight="bold" numberOfLines={1} ellipsizeMode="tail">{decodeHTML(props.title)}</Text>
                     <Box width="$6" />
                </HStack>
           </VStack>

@@ -1,5 +1,14 @@
 const fs = require('fs');
 
+function getSentryUploadUrl(sentryDsn) {
+     try {
+          return new URL(sentryDsn).origin + '/';
+     } catch (e) {
+          console.log('⚠️  Could not derive Sentry upload url from DSN: ' + sentryDsn);
+          return undefined;
+     }
+}
+
 function getArgs() {
      const args = {};
      process.argv.slice(2, process.argv.length).forEach((arg) => {
@@ -69,8 +78,7 @@ const app_config = {
      owner: owner['expoProjectOwner'],
      platforms: ['ios', 'android'],
      version: version['version'],
-     sdkVersion: '54.0.0',
-     newArchEnabled: false,
+     sdkVersion: '55.0.0',
      userInterfaceStyle: 'automatic',
      orientation: 'default',
      icon: app['discoveryUrl'] + 'API/SystemAPI?method=getLogoFile&themeId=' + app['themeId'] + '&type=appIcon&slug=' + app['slug'],
@@ -143,7 +151,6 @@ const app_config = {
                     apiKey: owner['googleApiKeyAndroid'],
                },
           },
-          edgeToEdgeEnabled: true
      },
      notification: {
           icon: app['discoveryUrl'] + 'API/SystemAPI?method=getLogoFile&themeId=' + app['themeId'] + '&type=appNotification&slug=' + app['slug'],
@@ -168,7 +175,6 @@ const app_config = {
      },
      plugins: [
           'expo-secure-store',
-          'expo-localization',
           'expo-notifications',
           'expo-sqlite',
           'expo-font',
@@ -186,24 +192,36 @@ const app_config = {
                     authToken: owner['sentryAuthToken'],
                     organization: owner['expoProjectOwner'],
                     project: app['sentryProject'],
+                    url: getSentryUploadUrl(app['sentryDsn']),
                },
           ],
           [
                'expo-build-properties',
                {
                     android: {
-                         compileSdkVersion: 35,
-                         targetSdkVersion: 35,
-                         buildToolsVersion: '35.0.0',
+                         compileSdkVersion: 36,
+                         targetSdkVersion: 36,
+                         buildToolsVersion: '36.0.0',
                     },
                     ios: {
                          deploymentTarget: '15.1',
+                         buildReactNativeFromSource: true
                     },
                },
           ],
          [
              'expo-web-browser'
-         ]
+         ],
+         'expo-image',
+         'expo-sharing',
+         '@react-native-community/datetimepicker',
+          [
+               "expo-maps",
+               {
+                    "requestLocationPermission": true,
+                    "locationPermission": "Allow this app to use your location to find nearby libraries"
+               }
+          ]
      ],
 };
 
